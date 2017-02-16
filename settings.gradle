@@ -1,0 +1,1 @@
+include ':app', ':smartgo-annotation', ':smartgo-compiler'
