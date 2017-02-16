@@ -5,5 +5,5 @@ package pers.victor.smartgo;
  */
 
 public interface SmartGoInjector<T> {
-    void inject(T activity);
+    void inject(T activity, Object i);
 }

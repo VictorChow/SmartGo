@@ -175,21 +175,37 @@ public class SmartGoProcessor extends AbstractProcessor {
         MethodSpec constructor = MethodSpec.constructorBuilder()
                 .addModifiers(Modifier.PRIVATE)
                 .build();
+        //SmartGo里的GoToActivity类里的addFlags()
+        MethodSpec addFlags = MethodSpec.methodBuilder("addFlags")
+                .addModifiers(Modifier.PUBLIC)
+                .addParameter(TypeName.INT, "flags")
+                .returns(ClassName.get("pers.victor.smartgo", "SmartGo", "ToActivity"))
+                .addStatement("intent.addFlags(flags)")
+                .addStatement("return this")
+                .build();
         //SmartGo里的GoToActivity类
         TypeSpec smartGoToActivity = TypeSpec.classBuilder("ToActivity")
                 .addModifiers(Modifier.FINAL, Modifier.PUBLIC, Modifier.STATIC)
                 .addMethod(constructor)
+                .addMethod(addFlags)
                 .addMethods(goToActivitiesMethodList)
                 .build();
-        //SmartGo类里bind()
+        //SmartGo类里inject(activity)
         MethodSpec inject = MethodSpec.methodBuilder("inject")
                 .addModifiers(Modifier.PUBLIC, Modifier.STATIC)
-                .addParameter(Object.class, "target")
+                .addParameter(Object.class, "activity")
+                .addStatement("inject(activity, null)")
+                .build();
+        //SmartGo类里inject(activity)
+        MethodSpec inject2 = MethodSpec.methodBuilder("inject")
+                .addModifiers(Modifier.PUBLIC, Modifier.STATIC)
+                .addParameter(Object.class, "activity")
+                .addParameter(Object.class, "intent")
                 .addCode("try {\n" +
-                        "    String injectorName = target.getClass().getCanonicalName() + \"_SmartGo\";\n" +
-                        "    (($T) Class.forName(injectorName).newInstance()).inject(target);\n" +
+                        "  String injectorName = activity.getClass().getCanonicalName() + \"_SmartGo\";\n" +
+                        "  (($T) Class.forName(injectorName).newInstance()).inject(activity, intent);\n" +
                         "} catch (Exception e) {\n" +
-                        "    e.printStackTrace();\n" +
+                        "  e.printStackTrace();\n" +
                         "}\n", SmartGoInjector.class)
                 .build();
         //SmartGo类里from()
@@ -227,6 +243,7 @@ public class SmartGoProcessor extends AbstractProcessor {
                 .addField(ClassName.bestGuess("android.content.Intent"), "intent", Modifier.PRIVATE, Modifier.STATIC)
                 .addMethod(constructor)
                 .addMethod(inject)
+                .addMethod(inject2)
                 .addMethod(from)
                 .addMethod(go)
                 .addMethod(goForResult)
@@ -246,7 +263,13 @@ public class SmartGoProcessor extends AbstractProcessor {
             builder.addModifiers(Modifier.PUBLIC)
                     .addAnnotation(Override.class)
                     .addParameter(ClassName.bestGuess(fullClassName), "activity")
-                    .addStatement("$T intent = activity.getIntent()", ClassName.bestGuess("android.content.Intent"));
+                    .addParameter(Object.class, "i")
+                    .addStatement("$T intent;", ClassName.bestGuess("android.content.Intent"))
+                    .addCode("if(i == null){\n" +
+                            "  intent = (Intent) activity.getIntent();\n" +
+                            "} else {\n" +
+                            "  intent = (Intent) i;\n" +
+                            "}\n");
             for (SmartGoEntity.FieldEntity field : entry.getValue().fields) {
                 addStatement(builder, field);
             }
