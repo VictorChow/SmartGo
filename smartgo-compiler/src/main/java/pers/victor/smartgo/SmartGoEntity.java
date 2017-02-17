@@ -8,14 +8,14 @@ import java.util.List;
  */
 
 class SmartGoEntity {
-    String packageName;
-    String className;
+    String packageName;//包名
+    String className;//类名 e.g. MainActivity
     List<FieldEntity> fields = new ArrayList<>();
 
     static class FieldEntity {
-        String fieldName;
-        String fieldType;
-        String fieldValue;
+        String fieldName;//activity里的属性名
+        String fieldType;//属性的类型 e.g. java.lang.String
+        String fieldValue;//注解的value
         String originalType = "";//转为Parcelable之前的类型
         String fieldParam = "";//泛型用
 

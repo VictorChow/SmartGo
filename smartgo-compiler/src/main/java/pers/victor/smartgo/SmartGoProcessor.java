@@ -3,6 +3,7 @@ package pers.victor.smartgo;
 import com.google.auto.service.AutoService;
 import com.squareup.javapoet.ArrayTypeName;
 import com.squareup.javapoet.ClassName;
+import com.squareup.javapoet.FieldSpec;
 import com.squareup.javapoet.JavaFile;
 import com.squareup.javapoet.MethodSpec;
 import com.squareup.javapoet.ParameterizedTypeName;
@@ -34,6 +35,7 @@ import javax.lang.model.element.VariableElement;
 
 @AutoService(Processor.class)
 public class SmartGoProcessor extends AbstractProcessor {
+    private static final String PACKAGE_NAME = "pers.victor.smartgo";
     private Filer filer;
     private Map<String, SmartGoEntity> map;
 
@@ -123,11 +125,30 @@ public class SmartGoProcessor extends AbstractProcessor {
             List<MethodSpec> targetActivitiesMethodList = new LinkedList<>();
             for (SmartGoEntity.FieldEntity field : entry.getValue().fields) {
                 String methodName = "set" + field.fieldValue.substring(0, 1).toUpperCase() + field.fieldValue.substring(1, field.fieldValue.length());
+                //ArrayListExtra里的泛型
+                String paramName = "";
+                if (field.fieldParam.length() > 0) {
+                    String paramSimpleName = field.fieldParam.substring(field.fieldParam.lastIndexOf(".") + 1, field.fieldParam.length());
+                    switch (paramSimpleName) {
+                        case "Integer":
+                            paramName = "IntegerArrayList";
+                            break;
+                        case "String":
+                            paramName = "StringArrayList";
+                            break;
+                        case "CharSequence":
+                            paramName = "CharSequenceArrayList";
+                            break;
+                        default:
+                            paramName = "ParcelableArrayList";
+                            break;
+                    }
+                }
                 MethodSpec method = MethodSpec.methodBuilder(methodName)
                         .addModifiers(Modifier.PUBLIC)
                         .addParameter(getFieldType(field), field.fieldValue + "Extra")
-                        .returns(ClassName.get("pers.victor.smartgo", "SmartGo", "To" + className))
-                        .addStatement("intent.putExtra($S, $L)", field.fieldValue, field.fieldValue + "Extra")
+                        .returns(ClassName.get(PACKAGE_NAME, "SmartGo", "To" + className))
+                        .addStatement("intent.put$LExtra($S, $L)", paramName, field.fieldValue, field.fieldValue + "Extra")
                         .addStatement("return this")
                         .build();
                 targetActivitiesMethodList.add(method);
@@ -145,7 +166,7 @@ public class SmartGoProcessor extends AbstractProcessor {
             MethodSpec title = MethodSpec.methodBuilder("setTitle")
                     .addModifiers(Modifier.PUBLIC)
                     .addParameter(String.class, "titleExtra")
-                    .returns(ClassName.get("pers.victor.smartgo", "SmartGo", "To" + className))
+                    .returns(ClassName.get(PACKAGE_NAME, "SmartGo", "To" + className))
                     .addStatement("intent.putExtra($S, $L)", "title", "titleExtra")
                     .addStatement("return this")
                     .build();
@@ -165,8 +186,11 @@ public class SmartGoProcessor extends AbstractProcessor {
             //SmartGo里GoToActivity类里的方法
             MethodSpec method = MethodSpec.methodBuilder("to" + className)
                     .addModifiers(Modifier.PUBLIC)
-                    .returns(ClassName.get("pers.victor.smartgo", "SmartGo", "To" + className))
-                    .addStatement("return new $T()", ClassName.get("pers.victor.smartgo", "SmartGo", "To" + className))
+                    .returns(ClassName.get(PACKAGE_NAME, "SmartGo", "To" + className))
+                    .addCode("//方便跳转" + className + "\n")
+                    .addStatement("$T c = $T.class", Class.class, ClassName.bestGuess(fullClassName))
+                    .addCode("\n")
+                    .addStatement("return new $T()", ClassName.get(PACKAGE_NAME, "SmartGo", "To" + className))
                     .build();
             targetActivitiesClassList.add(type);
             goToActivitiesMethodList.add(method);
@@ -179,14 +203,25 @@ public class SmartGoProcessor extends AbstractProcessor {
         MethodSpec addFlags = MethodSpec.methodBuilder("addFlags")
                 .addModifiers(Modifier.PUBLIC)
                 .addParameter(TypeName.INT, "flags")
-                .returns(ClassName.get("pers.victor.smartgo", "SmartGo", "ToActivity"))
+                .returns(ClassName.get(PACKAGE_NAME, "SmartGo", "ToActivity"))
                 .addStatement("intent.addFlags(flags)")
+                .addStatement("return this")
+                .build();
+        //SmartGo里的GoToActivity类里的setAnim()
+        MethodSpec setAnim = MethodSpec.methodBuilder("setAnim")
+                .addModifiers(Modifier.PUBLIC)
+                .addParameter(TypeName.INT, "enterAnimId")
+                .addParameter(TypeName.INT, "exitAnimId")
+                .returns(ClassName.get(PACKAGE_NAME, "SmartGo", "ToActivity"))
+                .addStatement("enterAnim = enterAnimId")
+                .addStatement("exitAnim = exitAnimId")
                 .addStatement("return this")
                 .build();
         //SmartGo里的GoToActivity类
         TypeSpec smartGoToActivity = TypeSpec.classBuilder("ToActivity")
                 .addModifiers(Modifier.FINAL, Modifier.PUBLIC, Modifier.STATIC)
                 .addMethod(constructor)
+                .addMethod(setAnim)
                 .addMethod(addFlags)
                 .addMethods(goToActivitiesMethodList)
                 .build();
@@ -212,10 +247,10 @@ public class SmartGoProcessor extends AbstractProcessor {
         MethodSpec from = MethodSpec.methodBuilder("from")
                 .addModifiers(Modifier.PUBLIC, Modifier.STATIC)
                 .addParameter(ClassName.bestGuess("android.app.Activity"), "ctx")
-                .returns(ClassName.get("pers.victor.smartgo", "SmartGo", "ToActivity"))
+                .returns(ClassName.get(PACKAGE_NAME, "SmartGo", "ToActivity"))
                 .addStatement("context = ctx")
                 .addStatement("intent = new Intent()")
-                .addStatement("return new $T()", ClassName.get("pers.victor.smartgo", "SmartGo", "ToActivity"))
+                .addStatement("return new $T()", ClassName.get(PACKAGE_NAME, "SmartGo", "ToActivity"))
                 .build();
         //SmartGo类里go()
         MethodSpec go = MethodSpec.methodBuilder("go")
@@ -223,8 +258,8 @@ public class SmartGoProcessor extends AbstractProcessor {
                 .addParameter(Class.class, "clazz")
                 .addStatement("intent.setClass(context, clazz)")
                 .addStatement("context.startActivity(intent)")
-                .addStatement("intent = null")
-                .addStatement("context = null")
+                .addStatement("setTransition()")
+                .addStatement("reset()")
                 .build();
         //SmartGo类里goForResult()
         MethodSpec goForResult = MethodSpec.methodBuilder("go")
@@ -233,24 +268,54 @@ public class SmartGoProcessor extends AbstractProcessor {
                 .addParameter(int.class, "requestCode")
                 .addStatement("intent.setClass(context, clazz)")
                 .addStatement("context.startActivityForResult(intent, requestCode)")
+                .addStatement("setTransition()")
+                .addStatement("reset()")
+                .build();
+        //SmartGo类里reset()
+        MethodSpec reset = MethodSpec.methodBuilder("reset")
+                .addModifiers(Modifier.PRIVATE)
+                .addModifiers(Modifier.STATIC)
                 .addStatement("intent = null")
                 .addStatement("context = null")
+                .addStatement("enterAnim = -1")
+                .addStatement("exitAnim = -1")
+                .build();
+        //SmartGo类里setTransition()
+        MethodSpec setTransition = MethodSpec.methodBuilder("setTransition")
+                .addModifiers(Modifier.PRIVATE)
+                .addModifiers(Modifier.STATIC)
+                .addCode("if(enterAnim < 0 || exitAnim < 0){\n" +
+                        "  return;\n" +
+                        "}\n" +
+                        "context.overridePendingTransition(enterAnim, exitAnim);\n")
+                .build();
+        //SmartGo类里enterAnim
+        FieldSpec enterAnim = FieldSpec.builder(TypeName.INT, "enterAnim", Modifier.PRIVATE, Modifier.STATIC)
+                .initializer("-1")
+                .build();
+        //SmartGo类里exitAnim
+        FieldSpec exitAnim = FieldSpec.builder(TypeName.INT, "exitAnim", Modifier.PRIVATE, Modifier.STATIC)
+                .initializer("-1")
                 .build();
         //SmartGo类
         TypeSpec smartGo = TypeSpec.classBuilder("SmartGo")
                 .addModifiers(Modifier.PUBLIC, Modifier.FINAL)
                 .addField(ClassName.bestGuess("android.app.Activity"), "context", Modifier.PRIVATE, Modifier.STATIC)
                 .addField(ClassName.bestGuess("android.content.Intent"), "intent", Modifier.PRIVATE, Modifier.STATIC)
+                .addField(enterAnim)
+                .addField(exitAnim)
                 .addMethod(constructor)
                 .addMethod(inject)
                 .addMethod(inject2)
                 .addMethod(from)
                 .addMethod(go)
                 .addMethod(goForResult)
+                .addMethod(setTransition)
+                .addMethod(reset)
                 .addType(smartGoToActivity)
                 .addTypes(targetActivitiesClassList)
                 .build();
-        JavaFile javaFile = JavaFile.builder("pers.victor.smartgo", smartGo).build();
+        JavaFile javaFile = JavaFile.builder(PACKAGE_NAME, smartGo).build();
         javaFile.writeTo(filer);
     }
 
@@ -262,11 +327,11 @@ public class SmartGoProcessor extends AbstractProcessor {
             MethodSpec.Builder builder = MethodSpec.methodBuilder("inject");
             builder.addModifiers(Modifier.PUBLIC)
                     .addAnnotation(Override.class)
-                    .addParameter(ClassName.bestGuess(fullClassName), "activity")
+                    .addParameter(ClassName.bestGuess(fullClassName), "a")
                     .addParameter(Object.class, "i")
                     .addStatement("$T intent;", ClassName.bestGuess("android.content.Intent"))
                     .addCode("if(i == null){\n" +
-                            "  intent = (Intent) activity.getIntent();\n" +
+                            "  intent = (Intent) a.getIntent();\n" +
                             "} else {\n" +
                             "  intent = (Intent) i;\n" +
                             "}\n");
@@ -286,7 +351,7 @@ public class SmartGoProcessor extends AbstractProcessor {
     private void addStatement(MethodSpec.Builder builder, SmartGoEntity.FieldEntity field) {
         String[] typeArray = {"boolean", "byte", "short", "int", "long", "double", "float", "char"};
         if (Arrays.asList(typeArray).contains(field.fieldType)) {
-            String statement = "activity.%s = intent.get%sExtra(\"%s\", %s)";
+            String statement = "a.%s = intent.get%sExtra(\"%s\", %s)";
             String defaultValue = "";
             switch (field.fieldType) {
                 case "int":
@@ -322,9 +387,16 @@ public class SmartGoProcessor extends AbstractProcessor {
                     extraType = type.substring(0, 1).toUpperCase() + type.substring(1, type.length()).replace("[]", "Array");
                 }
                 if (extraType.contentEquals("ParcelableArray")) {
-                    builder.addStatement("activity.$L = ($T) intent.get$LExtra($S)", field.fieldName, ArrayTypeName.of(ClassName.bestGuess(field.originalType)), paramType + extraType, field.fieldValue);
+                    //ParcelableArray不能强转为其它类型数组，需要单独处理
+                    ClassName originalTypeName = ClassName.bestGuess(field.originalType);
+                    builder.addStatement("$T[] $LArray = intent.getParcelableArrayExtra($S)", ClassName.bestGuess("android.os.Parcelable"), field.fieldValue, field.fieldValue);
+                    builder.addStatement("$T[] $LTempArray = new $T[$LArray.length]", originalTypeName, field.fieldValue, originalTypeName, field.fieldValue);
+                    builder.beginControlFlow("for (int n = 0; n < $LArray.length; n++)", field.fieldValue);
+                    builder.addStatement("$LTempArray[n] = ($T) $LArray[n]", field.fieldValue, originalTypeName, field.fieldValue);
+                    builder.endControlFlow();
+                    builder.addStatement("a.$L = $LTempArray", field.fieldName, field.fieldValue);
                 } else {
-                    builder.addStatement("activity.$L = intent.get$LExtra($S)", field.fieldName, paramType + extraType, field.fieldValue);
+                    builder.addStatement("a.$L = intent.get$LExtra($S)", field.fieldName, paramType + extraType, field.fieldValue);
                 }
             } else {
                 //ArrayList或非基本类型的Extra
@@ -334,7 +406,7 @@ public class SmartGoProcessor extends AbstractProcessor {
                 if (!Arrays.asList(params).contains(paramType)) {
                     paramType = "Parcelable";
                 }
-                builder.addStatement("activity.$L = intent.get$LExtra($S)", field.fieldName, paramType + extraType, field.fieldValue);
+                builder.addStatement("a.$L = intent.get$LExtra($S)", field.fieldName, paramType + extraType, field.fieldValue);
             }
         }
     }
@@ -418,7 +490,7 @@ public class SmartGoProcessor extends AbstractProcessor {
                 typeName = ClassName.bestGuess("android.os.Parcelable");
                 break;
             case "android.os.Parcelable[]":
-                typeName = ArrayTypeName.of(ClassName.bestGuess("android.os.Parcelable"));
+                typeName = ArrayTypeName.of(ClassName.bestGuess(field.originalType));
                 break;
             case "android.os.Bundle":
                 typeName = ClassName.bestGuess("android.os.Bundle");
