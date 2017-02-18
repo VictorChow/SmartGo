@@ -48,7 +48,7 @@ public class SmartGoProcessor extends AbstractProcessor {
 
     @Override
     public boolean process(Set<? extends TypeElement> set, RoundEnvironment roundEnvironment) {
-        for (Element element : roundEnvironment.getElementsAnnotatedWith(IntentValue.class)) {
+        for (Element element : roundEnvironment.getElementsAnnotatedWith(IntentExtra.class)) {
             if (!(element instanceof VariableElement)) {
                 return false;
             }
@@ -57,7 +57,7 @@ public class SmartGoProcessor extends AbstractProcessor {
             String fieldName = variableElement.getSimpleName().toString();
             String fieldType = variableElement.asType().toString();
             String className = variableElement.getEnclosingElement().getSimpleName().toString();
-            IntentValue annotation = element.getAnnotation(IntentValue.class);
+            IntentExtra annotation = element.getAnnotation(IntentExtra.class);
             String fieldValue = annotation.value();
             String canonicalClassName = packageName + "." + className;
             SmartGoEntity smartGoEntity;
@@ -414,7 +414,7 @@ public class SmartGoProcessor extends AbstractProcessor {
     @Override
     public Set<String> getSupportedAnnotationTypes() {
         Set<String> set = new LinkedHashSet<>();
-        set.add(IntentValue.class.getCanonicalName());
+        set.add(IntentExtra.class.getCanonicalName());
         return set;
     }
 
