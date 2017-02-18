@@ -2,7 +2,7 @@
 Activity跳转时传值和取值
 
 * 省去`intent.putExtra()`、`intent.getXXXExtra()`
-* 添加`@IntentExtra`后需Rebuild Project, 自动生成SmartGo
+* 添加`@IntentExtra`后需Rebuild Project, 自动生成SmartGo类
 * 暂不支持Serializable类型参数
 
 目标Activity
@@ -69,7 +69,7 @@ allprojects {
 
 ```
 dependencies {
-    compile 'com.github.VictorChow.SmartGo:smartgo-annotation:1.0.2'
-    annotationProcessor 'com.github.VictorChow.SmartGo:smartgo-compiler:1.0.2'
+    compile 'com.github.VictorChow.SmartGo:smartgo-annotation:1.0.3'
+    annotationProcessor 'com.github.VictorChow.SmartGo:smartgo-compiler:1.0.3'
 }
 ```
