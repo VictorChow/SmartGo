@@ -2,7 +2,7 @@
 Activity跳转时传值和取值
 
 * 省去`intent.putExtra()`、`intent.getXXXExtra()`
-* 添加`@IntentValue`后需Rebuild Project, 自动生成SmartGo
+* 添加`@IntentExtra`后需Rebuild Project, 自动生成SmartGo
 * 暂不支持Serializable类型参数
 
 目标Activity
@@ -10,9 +10,9 @@ Activity跳转时传值和取值
 ```
 public class TargetActivity extends Activity {
 
-    @IntentValue("name")
+    @IntentExtra("name")
     String myName;
-    @IntentValue("age")
+    @IntentExtra("age")
     int myAge;
 
     @Override
