@@ -336,7 +336,7 @@ public class SmartGoProcessor extends AbstractProcessor {
                             "  intent = (Intent) i;\n" +
                             "}\n");
             for (SmartGoEntity.FieldEntity field : entry.getValue().fields) {
-                addStatement(builder, field);
+                getExtras(builder, field);
             }
             TypeSpec typeSpec = TypeSpec.classBuilder(className + "_SmartGo")
                     .addModifiers(Modifier.PUBLIC, Modifier.FINAL)
@@ -348,10 +348,11 @@ public class SmartGoProcessor extends AbstractProcessor {
         }
     }
 
-    private void addStatement(MethodSpec.Builder builder, SmartGoEntity.FieldEntity field) {
+    private void getExtras(MethodSpec.Builder builder, SmartGoEntity.FieldEntity field) {
+        builder.addCode("if (intent.hasExtra($S)) {\n", field.fieldValue);
         String[] typeArray = {"boolean", "byte", "short", "int", "long", "double", "float", "char"};
         if (Arrays.asList(typeArray).contains(field.fieldType)) {
-            String statement = "a.%s = intent.get%sExtra(\"%s\", %s)";
+            String statement = "  a.%s = intent.get%sExtra(\"%s\", %s)";
             String defaultValue = "";
             switch (field.fieldType) {
                 case "int":
@@ -389,14 +390,15 @@ public class SmartGoProcessor extends AbstractProcessor {
                 if (extraType.contentEquals("ParcelableArray")) {
                     //ParcelableArray不能强转为其它类型数组，需要单独处理
                     ClassName originalTypeName = ClassName.bestGuess(field.originalType);
-                    builder.addStatement("$T[] $LArray = intent.getParcelableArrayExtra($S)", ClassName.bestGuess("android.os.Parcelable"), field.fieldValue, field.fieldValue);
-                    builder.addStatement("$T[] $LTempArray = new $T[$LArray.length]", originalTypeName, field.fieldValue, originalTypeName, field.fieldValue);
-                    builder.beginControlFlow("for (int n = 0; n < $LArray.length; n++)", field.fieldValue);
-                    builder.addStatement("$LTempArray[n] = ($T) $LArray[n]", field.fieldValue, originalTypeName, field.fieldValue);
+                    builder.addStatement("  $T[] $LArray = intent.getParcelableArrayExtra($S)", ClassName.bestGuess("android.os.Parcelable"), field.fieldValue, field.fieldValue);
+                    builder.addStatement("  $T[] $LTempArray = new $T[$LArray.length]", originalTypeName, field.fieldValue, originalTypeName, field.fieldValue);
+                    builder.beginControlFlow("  for (int n = 0; n < $LArray.length; n++)", field.fieldValue);
+                    builder.addStatement("  $LTempArray[n] = ($T) $LArray[n]", field.fieldValue, originalTypeName, field.fieldValue);
+                    builder.addCode(" ");
                     builder.endControlFlow();
-                    builder.addStatement("a.$L = $LTempArray", field.fieldName, field.fieldValue);
+                    builder.addStatement("  a.$L = $LTempArray", field.fieldName, field.fieldValue);
                 } else {
-                    builder.addStatement("a.$L = intent.get$LExtra($S)", field.fieldName, paramType + extraType, field.fieldValue);
+                    builder.addStatement("  a.$L = intent.get$LExtra($S)", field.fieldName, paramType + extraType, field.fieldValue);
                 }
             } else {
                 //ArrayList或非基本类型的Extra
@@ -406,9 +408,10 @@ public class SmartGoProcessor extends AbstractProcessor {
                 if (!Arrays.asList(params).contains(paramType)) {
                     paramType = "Parcelable";
                 }
-                builder.addStatement("a.$L = intent.get$LExtra($S)", field.fieldName, paramType + extraType, field.fieldValue);
+                builder.addStatement("  a.$L = intent.get$LExtra($S)", field.fieldName, paramType + extraType, field.fieldValue);
             }
         }
+        builder.addCode("}\n");
     }
 
     @Override
