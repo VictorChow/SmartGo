@@ -1,19 +1,18 @@
 # SmartGo
 Activity跳转时传值和取值
 
-* 省去`intent.putExtra()`、`intent.getXXXExtra()`
-* 添加`@IntentExtra`后需Rebuild Project, 自动生成SmartGo类
-* 暂不支持Serializable类型参数
+* 省去`intent.putExtra`、`intent.getXXXExtra`
+* 添加`@IntentExtra`后需Rebuild项目生成SmartGo类
+* 暂不支持Serializable类型
 
-目标Activity
+要跳转到的Activity
 
 ```
 public class TargetActivity extends Activity {
-
     @IntentExtra("name")
-    String myName;
-    @IntentExtra("age")
-    int myAge;
+    String myName; 
+    @IntentExtra //不加value时默认为属性名
+    int age;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -22,19 +21,18 @@ public class TargetActivity extends Activity {
 
         SmartGo.inject(this);
 
-        System.out.println(myName);
-        System.out.println(myAge);
+        Log.i("name", myName);
+        Log.i("age", age);
     }
 
-    // 如果在onNewIntent里调用
+    // 若需在onNewIntent里调用
     @Override
     protected void onNewIntent(Intent intent) {
-        super.onNewIntent(intent);
 
         SmartGo.inject(this, intent);
 
-        System.out.println(myName);
-        System.out.println(myAge);
+        Log.i("name", myName);
+        Log.i("age", age);
     }
 }
 
@@ -60,16 +58,16 @@ public class TargetActivity extends Activity {
 
 ```
 allprojects {
-		repositories {
-			...
-			maven { url 'https://jitpack.io' }
-		}
+	repositories {
+		...
+		maven { url 'https://jitpack.io' }
 	}
+}
 ```
 
 ```
 dependencies {
-    compile 'com.github.VictorChow.SmartGo:smartgo-annotation:1.0.4'
-    annotationProcessor 'com.github.VictorChow.SmartGo:smartgo-compiler:1.0.4'
+    compile 'com.github.VictorChow.SmartGo:smartgo-annotation:1.0.5'
+    annotationProcessor 'com.github.VictorChow.SmartGo:smartgo-compiler:1.0.5'
 }
 ```

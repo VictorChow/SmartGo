@@ -52,57 +52,7 @@ public class SmartGoProcessor extends AbstractProcessor {
             if (!(element instanceof VariableElement)) {
                 return false;
             }
-            VariableElement variableElement = (VariableElement) element;
-            String packageName = processingEnv.getElementUtils().getPackageOf(variableElement).getQualifiedName().toString();
-            String fieldName = variableElement.getSimpleName().toString();
-            String fieldType = variableElement.asType().toString();
-            String className = variableElement.getEnclosingElement().getSimpleName().toString();
-            IntentExtra annotation = element.getAnnotation(IntentExtra.class);
-            String fieldValue = annotation.value();
-            String canonicalClassName = packageName + "." + className;
-            SmartGoEntity smartGoEntity;
-            if (map.get(canonicalClassName) == null) {
-                smartGoEntity = new SmartGoEntity();
-                smartGoEntity.packageName = packageName;
-                smartGoEntity.className = className;
-                map.put(canonicalClassName, smartGoEntity);
-            } else {
-                smartGoEntity = map.get(canonicalClassName);
-            }
-            if (fieldType.contains("<") && fieldType.contains(">")) {
-                int startIndex = fieldType.indexOf("<");
-                int endIndex = fieldType.indexOf(">");
-                String class1 = fieldType.substring(0, startIndex);
-                String class2 = fieldType.substring(startIndex + 1, endIndex);
-                SmartGoEntity.FieldEntity entity = new SmartGoEntity.FieldEntity();
-                entity.fieldName = fieldName;
-                entity.fieldValue = fieldValue;
-                entity.fieldType = class1;
-                entity.fieldParam = class2;
-                smartGoEntity.fields.add(entity);
-            } else {
-                String[] typeArray = {
-                        "boolean", "boolean[]",
-                        "byte", "byte[]",
-                        "short", "short[]",
-                        "int", "int[]",
-                        "long", "long[]",
-                        "double", "double[]",
-                        "float", "float[]",
-                        "char", "char[]",
-                        "java.lang.CharSequence", "java.lang.CharSequence[]",
-                        "java.lang.String", "java.lang.String[]",
-                        "android.os.Bundle"
-                };
-                if (Arrays.asList(typeArray).contains(fieldType)) {
-                    smartGoEntity.fields.add(new SmartGoEntity.FieldEntity(fieldName, fieldType, fieldValue));
-                } else {
-                    String type = fieldType.contains("[]") ? "android.os.Parcelable[]" : "android.os.Parcelable";
-                    SmartGoEntity.FieldEntity entity = new SmartGoEntity.FieldEntity(fieldName, type, fieldValue);
-                    entity.originalType = fieldType.replace("[]", "");
-                    smartGoEntity.fields.add(entity);
-                }
-            }
+            getEachVariableEmelent(element);
         }
         try {
             createSmartGo();
@@ -111,6 +61,60 @@ public class SmartGoProcessor extends AbstractProcessor {
             e.printStackTrace();
         }
         return true;
+    }
+
+    private void getEachVariableEmelent(Element element) {
+        VariableElement variableElement = (VariableElement) element;
+        String packageName = processingEnv.getElementUtils().getPackageOf(variableElement).getQualifiedName().toString();
+        String fieldName = variableElement.getSimpleName().toString();
+        String fieldType = variableElement.asType().toString();
+        String className = variableElement.getEnclosingElement().getSimpleName().toString();
+        IntentExtra annotation = element.getAnnotation(IntentExtra.class);
+        String fieldValue = annotation.value().isEmpty() ? fieldName : annotation.value();
+        String canonicalClassName = packageName + "." + className;
+        SmartGoEntity smartGoEntity;
+        if (map.get(canonicalClassName) == null) {
+            smartGoEntity = new SmartGoEntity();
+            smartGoEntity.packageName = packageName;
+            smartGoEntity.className = className;
+            map.put(canonicalClassName, smartGoEntity);
+        } else {
+            smartGoEntity = map.get(canonicalClassName);
+        }
+        if (fieldType.contains("<") && fieldType.contains(">")) {
+            int startIndex = fieldType.indexOf("<");
+            int endIndex = fieldType.indexOf(">");
+            String class1 = fieldType.substring(0, startIndex);
+            String class2 = fieldType.substring(startIndex + 1, endIndex);
+            SmartGoEntity.FieldEntity entity = new SmartGoEntity.FieldEntity();
+            entity.fieldName = fieldName;
+            entity.fieldValue = fieldValue;
+            entity.fieldType = class1;
+            entity.fieldParam = class2;
+            smartGoEntity.fields.add(entity);
+        } else {
+            String[] typeArray = {
+                    "boolean", "boolean[]",
+                    "byte", "byte[]",
+                    "short", "short[]",
+                    "int", "int[]",
+                    "long", "long[]",
+                    "double", "double[]",
+                    "float", "float[]",
+                    "char", "char[]",
+                    "java.lang.CharSequence", "java.lang.CharSequence[]",
+                    "java.lang.String", "java.lang.String[]",
+                    "android.os.Bundle"
+            };
+            if (Arrays.asList(typeArray).contains(fieldType)) {
+                smartGoEntity.fields.add(new SmartGoEntity.FieldEntity(fieldName, fieldType, fieldValue));
+            } else {
+                String type = fieldType.contains("[]") ? "android.os.Parcelable[]" : "android.os.Parcelable";
+                SmartGoEntity.FieldEntity entity = new SmartGoEntity.FieldEntity(fieldName, type, fieldValue);
+                entity.originalType = fieldType.replace("[]", "");
+                smartGoEntity.fields.add(entity);
+            }
+        }
     }
 
     private void createSmartGo() throws Exception {
@@ -329,12 +333,7 @@ public class SmartGoProcessor extends AbstractProcessor {
                     .addAnnotation(Override.class)
                     .addParameter(ClassName.bestGuess(fullClassName), "a")
                     .addParameter(Object.class, "i")
-                    .addStatement("$T intent;", ClassName.bestGuess("android.content.Intent"))
-                    .addCode("if(i == null){\n" +
-                            "  intent = (Intent) a.getIntent();\n" +
-                            "} else {\n" +
-                            "  intent = (Intent) i;\n" +
-                            "}\n");
+                    .addStatement("$T intent = i == null ? a.getIntent() : (Intent) i", ClassName.bestGuess("android.content.Intent"));
             for (SmartGoEntity.FieldEntity field : entry.getValue().fields) {
                 getExtras(builder, field);
             }
