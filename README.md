@@ -67,7 +67,7 @@ allprojects {
 
 ```
 dependencies {
-    compile 'com.github.VictorChow.SmartGo:smartgo-annotation:1.0.5'
-    annotationProcessor 'com.github.VictorChow.SmartGo:smartgo-compiler:1.0.5'
+    compile 'com.github.VictorChow.SmartGo:smartgo-annotation:1.0.6'
+    annotationProcessor 'com.github.VictorChow.SmartGo:smartgo-compiler:1.0.6'
 }
 ```
