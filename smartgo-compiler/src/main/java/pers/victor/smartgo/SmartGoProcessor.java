@@ -52,7 +52,7 @@ public class SmartGoProcessor extends AbstractProcessor {
             if (!(element instanceof VariableElement)) {
                 return false;
             }
-            getEachVariableEmelent(element);
+            getEachVariableElement(element);
         }
         try {
             createSmartGo();
@@ -63,7 +63,7 @@ public class SmartGoProcessor extends AbstractProcessor {
         return true;
     }
 
-    private void getEachVariableEmelent(Element element) {
+    private void getEachVariableElement(Element element) {
         VariableElement variableElement = (VariableElement) element;
         String packageName = processingEnv.getElementUtils().getPackageOf(variableElement).getQualifiedName().toString();
         String fieldName = variableElement.getSimpleName().toString();
@@ -190,10 +190,8 @@ public class SmartGoProcessor extends AbstractProcessor {
             //SmartGo里GoToActivity类里的方法
             MethodSpec method = MethodSpec.methodBuilder("to" + className)
                     .addModifiers(Modifier.PUBLIC)
+                    .addJavadoc("@see $T ←方便跳转\n", ClassName.bestGuess(fullClassName))
                     .returns(ClassName.get(PACKAGE_NAME, "SmartGo", "To" + className))
-                    .addCode("//方便跳转" + className + "\n")
-                    .addStatement("$T c = $T.class", Class.class, ClassName.bestGuess(fullClassName))
-                    .addCode("\n")
                     .addStatement("return new $T()", ClassName.get(PACKAGE_NAME, "SmartGo", "To" + className))
                     .build();
             targetActivitiesClassList.add(type);
@@ -250,7 +248,7 @@ public class SmartGoProcessor extends AbstractProcessor {
         //SmartGo类里from()
         MethodSpec from = MethodSpec.methodBuilder("from")
                 .addModifiers(Modifier.PUBLIC, Modifier.STATIC)
-                .addParameter(ClassName.bestGuess("android.app.Activity"), "ctx")
+                .addParameter(ClassName.bestGuess("android.content.Context"), "ctx")
                 .returns(ClassName.get(PACKAGE_NAME, "SmartGo", "ToActivity"))
                 .addStatement("context = ctx")
                 .addStatement("intent = new Intent()")
@@ -271,7 +269,14 @@ public class SmartGoProcessor extends AbstractProcessor {
                 .addParameter(Class.class, "clazz")
                 .addParameter(int.class, "requestCode")
                 .addStatement("intent.setClass(context, clazz)")
-                .addStatement("context.startActivityForResult(intent, requestCode)")
+                .addCode("if(enterAnim < 0 || exitAnim < 0){\n" +
+                        "  return;\n" +
+                        "}\n" +
+                        "if (!(context instanceof $T)) {\n" +
+                        "  throw new $T(\"非Activity的Context，不能startActivityForResult\");\n" +
+                        "} else {\n" +
+                        "  ((Activity) context).startActivityForResult(intent, requestCode);\n" +
+                        "}\n", ClassName.bestGuess("android.app.Activity"), ClassName.bestGuess("java.lang.IllegalArgumentException"))
                 .addStatement("setTransition()")
                 .addStatement("reset()")
                 .build();
@@ -291,7 +296,11 @@ public class SmartGoProcessor extends AbstractProcessor {
                 .addCode("if(enterAnim < 0 || exitAnim < 0){\n" +
                         "  return;\n" +
                         "}\n" +
-                        "context.overridePendingTransition(enterAnim, exitAnim);\n")
+                        "if (!(context instanceof $T)) {\n" +
+                        "  throw new $T(\"非Activity的Context，不能overridePendingTransition\");\n" +
+                        "} else {\n" +
+                        "  ((Activity) context).overridePendingTransition(enterAnim, exitAnim);\n" +
+                        "}\n", ClassName.bestGuess("android.app.Activity"), ClassName.bestGuess("java.lang.IllegalArgumentException"))
                 .build();
         //SmartGo类里enterAnim
         FieldSpec enterAnim = FieldSpec.builder(TypeName.INT, "enterAnim", Modifier.PRIVATE, Modifier.STATIC)
@@ -304,7 +313,7 @@ public class SmartGoProcessor extends AbstractProcessor {
         //SmartGo类
         TypeSpec smartGo = TypeSpec.classBuilder("SmartGo")
                 .addModifiers(Modifier.PUBLIC, Modifier.FINAL)
-                .addField(ClassName.bestGuess("android.app.Activity"), "context", Modifier.PRIVATE, Modifier.STATIC)
+                .addField(ClassName.bestGuess("android.content.Context"), "context", Modifier.PRIVATE, Modifier.STATIC)
                 .addField(ClassName.bestGuess("android.content.Intent"), "intent", Modifier.PRIVATE, Modifier.STATIC)
                 .addField(enterAnim)
                 .addField(exitAnim)
