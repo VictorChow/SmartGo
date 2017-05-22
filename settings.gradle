@@ -1,1 +1,1 @@
-include ':app', ':smartgo-annotation', ':smartgo-compiler'
+include ':app', ':smartgo-annotation', ':smartgo-compiler', ':smartgo-compiler-kt'
