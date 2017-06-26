@@ -1,11 +1,12 @@
 apply plugin: 'java'
+apply plugin: 'kotlin'
 apply plugin: 'com.github.dcendents.android-maven'
-group='com.github.VictorChow'
+group = 'com.github.VictorChow'
 
 dependencies {
     compile project(':smartgo-annotation')
     compile 'com.google.auto.service:auto-service:1.0-rc2'
-    compile 'com.squareup:kotlinpoet:0.2.0'
+    compile "org.jetbrains.kotlin:kotlin-stdlib-jre8:$kotlin_version"
 }
 
 sourceCompatibility = "1.7"

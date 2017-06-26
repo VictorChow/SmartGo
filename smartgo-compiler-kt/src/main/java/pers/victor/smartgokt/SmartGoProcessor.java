@@ -1,7 +1,6 @@
 package pers.victor.smartgokt;
 
 import com.google.auto.service.AutoService;
-import com.squareup.kotlinpoet.ArrayTypeName;
 import com.squareup.kotlinpoet.ClassName;
 import com.squareup.kotlinpoet.FunSpec;
 import com.squareup.kotlinpoet.KModifier;
@@ -11,8 +10,9 @@ import com.squareup.kotlinpoet.PropertySpec;
 import com.squareup.kotlinpoet.TypeName;
 import com.squareup.kotlinpoet.TypeNameKt;
 import com.squareup.kotlinpoet.TypeSpec;
-import com.squareup.kotlinpoet.WildcardTypeName;
+import com.squareup.kotlinpoet.TypeVariableName;
 
+import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.HashMap;
 import java.util.LinkedHashSet;
@@ -182,7 +182,6 @@ public class SmartGoProcessor extends AbstractProcessor {
                     .addFunctions(targetActivitiesMethodList)
                     .addFun(go)
                     .addFun(goForResult)
-                    .addModifiers(KModifier.INNER)
                     .build();
             //SmartGo里GoToActivity类里的方法
             FunSpec method = FunSpec.builder("to" + className)
@@ -211,7 +210,6 @@ public class SmartGoProcessor extends AbstractProcessor {
                 .build();
         //SmartGo里的GoToActivity类
         TypeSpec smartGoToActivity = TypeSpec.classBuilder("ToActivity")
-                .addModifiers(KModifier.INNER)
                 .addFun(setAnim)
                 .addFun(addFlags)
                 .addFunctions(goToActivitiesMethodList)
@@ -243,7 +241,7 @@ public class SmartGoProcessor extends AbstractProcessor {
         //SmartGo类里go()
         FunSpec go = FunSpec.builder("gokt")
                 .addModifiers(KModifier.PRIVATE)
-                .addParameter("clazz", ParameterizedTypeName.get(ClassName.bestGuess(Class.class.getCanonicalName()), WildcardTypeName.subtypeOf(ClassName.bestGuess("android.app.Activity"))))
+                .addParameter("clazz", ParameterizedTypeName.get(ClassName.bestGuess(Class.class.getCanonicalName()), TypeVariableName.get("*")))
                 .addStatement("intent!!.setClass(context, clazz)")
                 .addStatement("context!!.startActivity(intent)")
                 .addStatement("setTransition()")
@@ -252,7 +250,7 @@ public class SmartGoProcessor extends AbstractProcessor {
         //SmartGo类里goForResult()
         FunSpec goForResult = FunSpec.builder("gokt")
                 .addModifiers(KModifier.PRIVATE)
-                .addParameter("clazz", ParameterizedTypeName.get(ClassName.bestGuess(Class.class.getCanonicalName()), WildcardTypeName.subtypeOf(ClassName.bestGuess("android.app.Activity"))))
+                .addParameter("clazz", ParameterizedTypeName.get(ClassName.bestGuess(Class.class.getCanonicalName()), TypeVariableName.get("*")))
                 .addParameter("requestCode", TypeNameKt.INT)
                 .addStatement("intent!!.setClass(context, clazz)")
                 .addCode("if(enterAnim < 0 || exitAnim < 0){\n" +
@@ -297,11 +295,13 @@ public class SmartGoProcessor extends AbstractProcessor {
                 .initializer("-1")
                 .build();
         //SmartGo类
-        TypeSpec smartGo = TypeSpec.classBuilder("SmartGo")
-                .addProperty(PropertySpec.builder("context", ClassName.bestGuess("android.content.Context").asNullable(), KModifier.PRIVATE).mutable(true).initializer("null").build())
-                .addProperty(PropertySpec.builder("intent", ClassName.bestGuess("android.content.Intent").asNullable(), KModifier.PRIVATE).mutable(true).initializer("null").build())
-                .addProperty(enterAnim)
-                .addProperty(exitAnim)
+        List<PropertySpec> propertySpecs = new ArrayList<>();
+        propertySpecs.add(PropertySpec.builder("context", ClassName.bestGuess("android.content.Context").asNullable(), KModifier.PRIVATE).mutable(true).initializer("null").build());
+        propertySpecs.add(PropertySpec.builder("intent", ClassName.bestGuess("android.content.Intent").asNullable(), KModifier.PRIVATE).mutable(true).initializer("null").build());
+        propertySpecs.add(enterAnim);
+        propertySpecs.add(exitAnim);
+        TypeSpec smartGo = TypeSpec.objectBuilder("SmartGo")
+                .addProperties(propertySpecs)
                 .addFun(inject)
                 .addFun(inject2)
                 .addFun(from)
@@ -325,7 +325,7 @@ public class SmartGoProcessor extends AbstractProcessor {
             builder.addModifiers(KModifier.OVERRIDE)
                     .addParameter("a", ClassName.bestGuess(fullClassName))
                     .addParameter("i", TypeNameKt.ANY.asNullable())
-                    .addStatement("val intent = if (i == null) a.getIntent() else i as %T", ClassName.bestGuess("android.content.Intent"));
+                    .addStatement("val intent = i as? %T ?: a.getIntent()", ClassName.bestGuess("android.content.Intent"));
             for (SmartGoEntity.FieldEntity field : entry.getValue().fields) {
                 getExtras(builder, field);
             }
@@ -468,19 +468,19 @@ public class SmartGoProcessor extends AbstractProcessor {
                 typeName = ClassName.get("kotlin", "CharSequence");
                 break;
             case "java.lang.CharSequence[]":
-                typeName = ArrayTypeName.of(ClassName.get("kotlin", "CharSequence"));
+                typeName = ParameterizedTypeName.get(ClassName.bestGuess("kotlin.Array"), ClassName.get("kotlin", "CharSequence"));
                 break;
             case "java.lang.String":
                 typeName = ClassName.get("kotlin", "String");
                 break;
             case "java.lang.String[]":
-                typeName = ArrayTypeName.of(ClassName.get("kotlin", "String"));
+                typeName = ParameterizedTypeName.get(ClassName.bestGuess("kotlin.Array"), ClassName.get("kotlin", "String"));
                 break;
             case "android.os.Parcelable":
                 typeName = ClassName.bestGuess("android.os.Parcelable");
                 break;
             case "android.os.Parcelable[]":
-                typeName = ArrayTypeName.of(ClassName.bestGuess(field.originalType));
+                typeName = ParameterizedTypeName.get(ClassName.bestGuess("kotlin.Array"), ClassName.bestGuess("android.os.Parcelable"));
                 break;
             case "android.os.Bundle":
                 typeName = ClassName.bestGuess("android.os.Bundle");
