@@ -1,15 +1,15 @@
 # SmartGo  [![](https://jitpack.io/v/VictorChow/SmartGo.svg)](https://jitpack.io/#VictorChow/SmartGo)
 
-#### Activity跳转时传值和取值
+### 简化Activity跳转时传值及取值
 
-* 省去`intent.putExtra()`、`intent.getXXXExtra()`
-* 添加`@IntentExtra`后需Rebuild项目生成SmartGo类
 * 支持Java、Kotlin
+* 省去`intent.putExtra()`、`intent.getXXXExtra()`
+* 属性添加`@IntentExtra`后需Rebuild项目生成SmartGo类
 * 暂不支持Serializable
 
-#### 要跳转到的Activity
+### 要跳转到的Activity
 
-##### Java
+#### Java
 
 ```java
 public class TargetActivity extends Activity {
@@ -21,16 +21,17 @@ public class TargetActivity extends Activity {
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
-
+		//为添加@IntentExtra注解的属性赋值
         SmartGo.inject(this);
       
         Log.i("name", myName);
         Log.i("age", age);
     }
 
-    // 若需在onNewIntent里调用
+    //若需在onNewIntent里调用
     @Override
     protected void onNewIntent(Intent intent) {
+      	//为添加@IntentExtra注解的属性赋值
         SmartGo.inject(this, intent);
       
         Log.i("name", myName);
@@ -38,7 +39,7 @@ public class TargetActivity extends Activity {
     }
 }
 ```
-##### Kotlin
+#### Kotlin
 
 ```kotlin
 class TargetActivity : Activity() {
@@ -47,17 +48,18 @@ class TargetActivity : Activity() {
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
-
+		//为添加@IntentExtra注解的属性赋值
         SmartGo.inject(this)
-
+      
         myName.log("name")
         age.log("age")
     }
 
-    // 若需在onNewIntent里调用
+    //若需在onNewIntent里调用
     override fun onNewIntent(intent: Intent) {
+      	//为添加@IntentExtra注解的属性赋值
         SmartGo.inject(this, intent)
-
+      
         myName.log("name")
         age.log("age")
     }
@@ -68,7 +70,7 @@ class TargetActivity : Activity() {
 }
 ```
 
-#### 跳转
+### 跳转
 
 ```java
 SmartGo.from(this)
@@ -78,7 +80,7 @@ SmartGo.from(this)
 	   .go();
 ```
 
-#### 其他
+### 其他
 
 ```java
 SmartGo.from(this)
@@ -100,7 +102,7 @@ allprojects {
 }
 ```
 
-##### Java
+#### Java
 
 ```groovy
 dependencies {
@@ -108,7 +110,7 @@ dependencies {
     annotationProcessor 'com.github.VictorChow.SmartGo:smartgo-compiler:1.1.0'
 }
 ```
-##### Kotlin
+#### Kotlin
 
 ```groovy
 dependencies {
