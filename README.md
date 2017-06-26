@@ -1,13 +1,17 @@
-# SmartGo
-Activity跳转时传值和取值
+# SmartGo  [![](https://jitpack.io/v/VictorChow/SmartGo.svg)](https://jitpack.io/#VictorChow/SmartGo)
 
-* 省去`intent.putExtra`、`intent.getXXXExtra`
+#### Activity跳转时传值和取值
+
+* 省去`intent.putExtra()`、`intent.getXXXExtra()`
 * 添加`@IntentExtra`后需Rebuild项目生成SmartGo类
-* 暂不支持Serializable类型
+* 支持Java、Kotlin
+* 暂不支持Serializable
 
-要跳转到的Activity
+#### 要跳转到的Activity
 
-```
+##### Java
+
+```java
 public class TargetActivity extends Activity {
     @IntentExtra("name")
     String myName; 
@@ -17,10 +21,9 @@ public class TargetActivity extends Activity {
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
-        setContentView(R.layout.activity_target);
 
         SmartGo.inject(this);
-
+      
         Log.i("name", myName);
         Log.i("age", age);
     }
@@ -28,35 +31,67 @@ public class TargetActivity extends Activity {
     // 若需在onNewIntent里调用
     @Override
     protected void onNewIntent(Intent intent) {
-
         SmartGo.inject(this, intent);
-
+      
         Log.i("name", myName);
         Log.i("age", age);
     }
 }
-
 ```
-跳转
+##### Kotlin
 
-	SmartGo.from(this)
-		   .toTargetActivity()
-		   .setName("Victor")
-		   .setAge(23)
-		   .go();
+```kotlin
+class TargetActivity : Activity() {
+    @IntentExtra("name") lateinit var myName: String
+    @IntentExtra var age = 0    //不加value时默认为属性名
 
-其他设置
+    override fun onCreate(savedInstanceState: Bundle?) {
+        super.onCreate(savedInstanceState)
 
-	SmartGo.from(this)
-	       .addFlags(Intent.FLAG_ACTIVITY_NEW_TASK)
-	       .addFlags(Intent.FLAG_ACTIVITY_CLEAR_TOP)
-	       .setAnim(R.anim.enterAnim, R.anim.exitAnim)
-	       // setXXX()
-	       .go(requestCode);
+        SmartGo.inject(this)
+
+        myName.log("name")
+        age.log("age")
+    }
+
+    // 若需在onNewIntent里调用
+    override fun onNewIntent(intent: Intent) {
+        SmartGo.inject(this, intent)
+
+        myName.log("name")
+        age.log("age")
+    }
+
+    private fun Any.log(tag: String) {
+        Log.i(tag, this.toString())
+    }
+}
+```
+
+#### 跳转
+
+```java
+SmartGo.from(this)
+	   .toTargetActivity()
+	   .setName("Victor")
+	   .setAge(23)
+	   .go();
+```
+
+#### 其他
+
+```java
+SmartGo.from(this)
+       .addFlags(Intent.FLAG_ACTIVITY_NEW_TASK)
+       .addFlags(Intent.FLAG_ACTIVITY_CLEAR_TOP)
+       .setAnim(R.anim.enterAnim, R.anim.exitAnim)
+       // setXXX()
+       .go(requestCode);
+```
 
 ## Gradle
 
-```
+```groovy
 allprojects {
     repositories {
         ...
@@ -65,9 +100,24 @@ allprojects {
 }
 ```
 
-```
+##### Java
+
+```groovy
 dependencies {
-    compile 'com.github.VictorChow.SmartGo:smartgo-annotation:1.0.6'
-    annotationProcessor 'com.github.VictorChow.SmartGo:smartgo-compiler:1.0.6'
+    compile 'com.github.VictorChow.SmartGo:smartgo-annotation:1.1.0'
+    annotationProcessor 'com.github.VictorChow.SmartGo:smartgo-compiler:1.1.0'
 }
 ```
+##### Kotlin
+
+```groovy
+dependencies {
+    compile 'com.github.VictorChow.SmartGo:smartgo-annotation:1.1.0'
+    kapt 'com.github.VictorChow.SmartGo:smartgo-compiler-kt:1.1.0'
+}
+
+kapt {
+    generateStubs = true
+}
+```
+
