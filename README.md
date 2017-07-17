@@ -21,7 +21,7 @@ public class TargetActivity extends Activity {
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
-		//为添加@IntentExtra注解的属性赋值
+		
         SmartGo.inject(this);
       
         Log.i("name", myName);
@@ -31,7 +31,7 @@ public class TargetActivity extends Activity {
     //若需在onNewIntent里调用
     @Override
     protected void onNewIntent(Intent intent) {
-      	//为添加@IntentExtra注解的属性赋值
+      
         SmartGo.inject(this, intent);
       
         Log.i("name", myName);
@@ -48,7 +48,7 @@ class TargetActivity : Activity() {
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
-		//为添加@IntentExtra注解的属性赋值
+		
         SmartGo.inject(this)
       
         myName.log("name")
@@ -57,7 +57,7 @@ class TargetActivity : Activity() {
 
     //若需在onNewIntent里调用
     override fun onNewIntent(intent: Intent) {
-      	//为添加@IntentExtra注解的属性赋值
+      	
         SmartGo.inject(this, intent)
       
         myName.log("name")
@@ -87,7 +87,7 @@ SmartGo.from(this)
        .addFlags(Intent.FLAG_ACTIVITY_NEW_TASK)
        .addFlags(Intent.FLAG_ACTIVITY_CLEAR_TOP)
        .setAnim(R.anim.enterAnim, R.anim.exitAnim)
-       // setXXX()
+       // .setXXX()
        .go(requestCode);
 ```
 
@@ -106,16 +106,16 @@ allprojects {
 
 ```groovy
 dependencies {
-    compile 'com.github.VictorChow.SmartGo:smartgo-annotation:1.1.0'
-    annotationProcessor 'com.github.VictorChow.SmartGo:smartgo-compiler:1.1.0'
+    compile 'com.github.VictorChow.SmartGo:smartgo-annotation:1.1.1'
+    annotationProcessor 'com.github.VictorChow.SmartGo:smartgo-compiler:1.1.1'
 }
 ```
 #### Kotlin
 
 ```groovy
 dependencies {
-    compile 'com.github.VictorChow.SmartGo:smartgo-annotation:1.1.0'
-    kapt 'com.github.VictorChow.SmartGo:smartgo-compiler-kt:1.1.0'
+    compile 'com.github.VictorChow.SmartGo:smartgo-annotation:1.1.1'
+    kapt 'com.github.VictorChow.SmartGo:smartgo-compiler-kt:1.1.1'
 }
 
 kapt {
