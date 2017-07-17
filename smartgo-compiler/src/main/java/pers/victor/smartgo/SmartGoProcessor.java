@@ -269,10 +269,7 @@ public class SmartGoProcessor extends AbstractProcessor {
                 .addParameter(Class.class, "clazz")
                 .addParameter(int.class, "requestCode")
                 .addStatement("intent.setClass(context, clazz)")
-                .addCode("if(enterAnim < 0 || exitAnim < 0){\n" +
-                        "  return;\n" +
-                        "}\n" +
-                        "if (!(context instanceof $T)) {\n" +
+                .addCode("if (!(context instanceof $T)) {\n" +
                         "  throw new $T(\"非Activity的Context，不能startActivityForResult\");\n" +
                         "} else {\n" +
                         "  ((Activity) context).startActivityForResult(intent, requestCode);\n" +

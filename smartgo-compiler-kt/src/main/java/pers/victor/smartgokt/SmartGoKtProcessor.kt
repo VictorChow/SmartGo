@@ -207,10 +207,7 @@ class SmartGoKtProcessor : AbstractProcessor() {
                 .addParameter("clazz", ParameterizedTypeName.get(ClassName.bestGuess(Class::class.java.canonicalName), TypeVariableName.get("*")))
                 .addParameter("requestCode", INT)
                 .addStatement("intent!!.setClass(context, clazz)")
-                .addCode("if(enterAnim < 0 || exitAnim < 0){\n" +
-                        "  return\n" +
-                        "}\n" +
-                        "if (context !is %T) {\n" +
+                .addCode("if (context !is %T) {\n" +
                         "  throw %T(\"非Activity的Context，不能startActivityForResult\")\n" +
                         "} else {\n" +
                         "  (context as Activity).startActivityForResult(intent, requestCode)\n" +
