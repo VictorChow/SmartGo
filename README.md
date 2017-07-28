@@ -5,7 +5,7 @@
 * 支持Java、Kotlin
 * 省去`intent.putExtra()`、`intent.getXXXExtra()`
 * 属性添加`@IntentExtra`后需Rebuild项目生成SmartGo类
-* 暂不支持Serializable
+* 支持`intent.putExtra()`除Serializable以外的其他类型
 
 ### 要跳转到的Activity
 
