@@ -1,6 +1,6 @@
 # SmartGo  [![](https://jitpack.io/v/VictorChow/SmartGo.svg)](https://jitpack.io/#VictorChow/SmartGo)
 
-### 简化Activity跳转时传值及取值
+### 通过编译时注解生成文件，简化Activity跳转时传值及取值
 
 * 支持Java、Kotlin
 * 省去`intent.putExtra()`、`intent.getXXXExtra()`
