@@ -3,7 +3,7 @@
 ### 通过编译时注解生成文件，简化Activity跳转时传值及取值
 
 * 支持Java、Kotlin
-* 省去`intent.putExtra()`、`intent.getXXXExtra()`
+* 自动生成赋值取值方法，省去`intent.putExtra()`、`intent.getXXXExtra()`
 * 属性添加`@IntentExtra`后需Rebuild项目生成SmartGo类
 * 支持`intent.putExtra()`除Serializable以外的其他类型
 
@@ -15,13 +15,15 @@
 public class TargetActivity extends Activity {
     @IntentExtra("name")
     String myName; 
+
     @IntentExtra //不加value时默认为属性名
     int age;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
-		
+	
+        //注入	
         SmartGo.inject(this);
       
         Log.i("name", myName);
@@ -31,7 +33,7 @@ public class TargetActivity extends Activity {
     //若需在onNewIntent里调用
     @Override
     protected void onNewIntent(Intent intent) {
-      
+        //注入
         SmartGo.inject(this, intent);
       
         Log.i("name", myName);
@@ -43,12 +45,15 @@ public class TargetActivity extends Activity {
 
 ```kotlin
 class TargetActivity : Activity() {
-    @IntentExtra("name") lateinit var myName: String
+    @IntentExtra("name") 
+    lateinit var myName: String
+
     @IntentExtra var age = 0    //不加value时默认为属性名
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
-		
+	
+        //注入	
         SmartGo.inject(this)
       
         myName.log("name")
@@ -57,7 +62,7 @@ class TargetActivity : Activity() {
 
     //若需在onNewIntent里调用
     override fun onNewIntent(intent: Intent) {
-      	
+      	//注入	
         SmartGo.inject(this, intent)
       
         myName.log("name")
@@ -71,19 +76,20 @@ class TargetActivity : Activity() {
 ```
 
 ### 跳转
+##### 自动生成ToXXXActivity()、setXXX（）方法
 
 ```java
-SmartGo.from(this)
-	   .toTargetActivity()
-	   .setName("Victor")
-	   .setAge(23)
-	   .go();
+SmartGo.from(context)
+       .toTargetActivity()
+       .setName("Victor")
+       .setAge(23)
+       .go();
 ```
 
 ### 其他
 
 ```java
-SmartGo.from(this)
+SmartGo.from(context)
        .addFlags(Intent.FLAG_ACTIVITY_NEW_TASK)
        .addFlags(Intent.FLAG_ACTIVITY_CLEAR_TOP)
        .setAnim(R.anim.enterAnim, R.anim.exitAnim)
@@ -122,4 +128,3 @@ kapt {
     generateStubs = true
 }
 ```
-
