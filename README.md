@@ -128,3 +128,102 @@ kapt {
     generateStubs = true
 }
 ```
+
+## 测试
+
+支持类型
+
+```java
+@IntentExtra("boolean")
+boolean myBoolean;
+@IntentExtra("booleans")
+boolean[] myBooleans;
+@IntentExtra("byte")
+byte myByte;
+@IntentExtra("bytes")
+byte[] myBytes;
+@IntentExtra("short")
+short myShort;
+@IntentExtra("shorts")
+short[] myShorts;
+@IntentExtra("int")
+int myInt;
+@IntentExtra("ints")
+int[] myInts;
+@IntentExtra("float")
+float myFloat;
+@IntentExtra("floats")
+float[] myFloats;
+@IntentExtra("double")
+double myDouble;
+@IntentExtra("doubles")
+double[] myDoubles;
+@IntentExtra("long")
+long myLong;
+@IntentExtra("longs")
+long[] myLongs;
+@IntentExtra("char")
+char myChar;
+@IntentExtra("chars")
+char[] myChars;
+@IntentExtra("charSequence")
+CharSequence myCharSequence;
+@IntentExtra("charSequences")
+CharSequence[] myCharSequences;
+@IntentExtra("string")
+String myString;
+@IntentExtra("strings")
+String[] myStrings;
+@IntentExtra("parcelable")
+TestBean testBean;
+@IntentExtra("parcelables")
+TestBean[] testBeans;
+@IntentExtra("bundle")
+Bundle myBundle;
+@IntentExtra("intList")
+ArrayList<Integer> myIntList;
+@IntentExtra("stringList")
+ArrayList<String> myStringList;
+@IntentExtra("charSequenceList")
+ArrayList<CharSequence> myCharSequenceList;
+@IntentExtra("parcelableList")
+ArrayList<TestBean> myParcelableList;
+```
+
+传值
+
+```java
+SmartGo.from(this)
+        .addFlags(Intent.FLAG_ACTIVITY_NEW_TASK)
+        .addFlags(Intent.FLAG_ACTIVITY_CLEAR_TOP)
+        .setAnim(R.anim.enter, R.anim.exit)
+        .toTestActivity()
+        .setBoolean(false)
+        .setBooleans(new boolean[]{false, true, false})
+        .setByte((byte) 1)
+        .setBytes(new byte[]{(byte) 2, (byte) 3, (byte) 4})
+        .setShort((short) 5)
+        .setShorts(new short[]{(short) 6, (short) 7, (short) 8})
+        .setInt(9)
+        .setInts(new int[]{10, 11, 12})
+        .setIntList(integers)
+        .setFloat(13f)
+        .setFloats(new float[]{14f, 15f, 16f})
+        .setDouble(17)
+        .setDoubles(new double[]{18, 19, 20})
+        .setLong(21L)
+        .setLongs(new long[]{22L, 23L, 24L})
+        .setChar('A')
+        .setChars(new char[]{'B', 'C', 'D'})
+        .setCharSequence("CharSequence1")
+        .setCharSequences(new CharSequence[]{"CharSequence2", "CharSequence3", "CharSequence4"})
+        .setCharSequenceList(charSequences)
+        .setString("String1")
+        .setStrings(new String[]{"String2", "String3", "String4"})
+        .setStringList(strings)
+        .setParcelable(new TestBean(25))
+        .setParcelables(new TestBean[]{new TestBean(26), new TestBean(27), new TestBean(28)})
+        .setParcelableList(testBeen)
+        .setBundle(bundle)
+        .go();
+```
