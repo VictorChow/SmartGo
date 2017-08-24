@@ -60,7 +60,7 @@ public class SmartGoProcessor extends AbstractProcessor {
         } catch (Exception e) {
             e.printStackTrace();
         }
-        return true;
+        return false;
     }
 
     private void getEachVariableElement(Element element) {

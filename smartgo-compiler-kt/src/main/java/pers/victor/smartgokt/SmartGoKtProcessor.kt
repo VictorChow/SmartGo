@@ -39,7 +39,7 @@ class SmartGoKtProcessor : AbstractProcessor() {
         } catch (e: Exception) {
             e.printStackTrace()
         }
-        return true
+        return false
     }
 
     private fun getEachVariableElement(element: Element) {
