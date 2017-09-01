@@ -110,6 +110,12 @@ dependencies {
 }
 ```
 
+## 混淆
+
+```
+-keep class * implements pers.victor.smartgo.SmartGoInjector
+```
+
 ## 测试
 
 支持类型
