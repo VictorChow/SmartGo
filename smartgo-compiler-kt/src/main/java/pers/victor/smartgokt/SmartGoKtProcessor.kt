@@ -14,12 +14,12 @@ import javax.lang.model.element.VariableElement
  * Created by Victor on 2017/6/26. (ง •̀_•́)ง
  */
 
-private val PACKAGE_NAME = "pers.victor.smartgokt"
 
 @AutoService(Processor::class)
 class SmartGoKtProcessor : AbstractProcessor() {
-    private lateinit var filer: Filer
+    private val PACKAGE_NAME = "pers.victor.smartgo"
     private val map = hashMapOf<String, SmartGoEntityKt>()
+    private lateinit var filer: Filer
 
     @Synchronized override fun init(processingEnvironment: ProcessingEnvironment) {
         super.init(processingEnvironment)
@@ -100,36 +100,35 @@ class SmartGoKtProcessor : AbstractProcessor() {
                 var paramName = ""
                 if (!field.fieldParam.isEmpty()) {
                     val paramSimpleName = field.fieldParam.substring(field.fieldParam.lastIndexOf(".") + 1, field.fieldParam.length)
-                    when (paramSimpleName) {
-                        "Integer" -> paramName = "IntegerArrayList"
-                        "String" -> paramName = "StringArrayList"
-                        "CharSequence" -> paramName = "CharSequenceArrayList"
-                        else -> paramName = "ParcelableArrayList"
+                    paramName = when (paramSimpleName) {
+                        "Integer" -> "IntegerArrayList"
+                        "String" -> "StringArrayList"
+                        "CharSequence" -> "CharSequenceArrayList"
+                        else -> "ParcelableArrayList"
                     }
                 }
                 val method = FunSpec.builder(methodName)
                         .addParameter(field.fieldValue + "Extra", getFieldType(field))
-                        .returns(ClassName.get(PACKAGE_NAME, "SmartGo", "To" + className))
-                        .addStatement("intent!!.put%LExtra(%S, %L)", paramName, field.fieldValue, field.fieldValue + "Extra")
+                        .returns(ClassName.get(PACKAGE_NAME, "To" + className))
+                        .addStatement("SmartGo.intent!!.put%LExtra(%S, %L)", paramName, field.fieldValue, field.fieldValue + "Extra")
                         .addStatement("return this")
                         .build()
                 targetActivitiesMethodList.add(method)
             }
             //SmartGo里GoToXXXActivity类的go()
             val go = FunSpec.builder("go")
-                    .addStatement("gokt(%T::class.java)", ClassName.bestGuess(fullClassName))
+                    .addStatement("SmartGo.gokt(%T::class.java)", ClassName.bestGuess(fullClassName))
                     .build()
             val goForResult = FunSpec.builder("go")
                     .addParameter("requestCode", INT)
-                    .addStatement("gokt(%T::class.java, requestCode)", ClassName.bestGuess(fullClassName))
+                    .addStatement("SmartGo.gokt(%T::class.java, requestCode)", ClassName.bestGuess(fullClassName))
                     .build()
             val title = FunSpec.builder("setTitle")
                     .addParameter("titleExtra", ClassName.get("kotlin", "String"))
-                    .returns(ClassName.get(PACKAGE_NAME, "SmartGo", "To" + className))
-                    .addStatement("intent!!.putExtra(%S, %L)", "title", "titleExtra")
+                    .returns(ClassName.get(PACKAGE_NAME, "To" + className))
+                    .addStatement("SmartGo.intent!!.putExtra(%S, %L)", "title", "titleExtra")
                     .addStatement("return this")
                     .build()
-            //私有构造方法
             //SmartGo里GoToXXXActivity类
             val type = TypeSpec.classBuilder("To" + className)
                     .addFun(title)
@@ -139,35 +138,17 @@ class SmartGoKtProcessor : AbstractProcessor() {
                     .build()
             //SmartGo里GoToActivity类里的方法
             val method = FunSpec.builder("to" + className)
-                    .addKdoc("@see %T ←方便跳转\n", ClassName.bestGuess(fullClassName))
-                    .returns(ClassName.get(PACKAGE_NAME, "SmartGo", "To" + className))
-                    .addStatement("return %T()", ClassName.get(PACKAGE_NAME, "SmartGo", "To" + className))
+                    .addKdoc("@see %T ←跳转\n", ClassName.bestGuess(fullClassName))
+                    .returns(ClassName.get(PACKAGE_NAME, "To" + className))
+                    .addStatement("return %T()", ClassName.get(PACKAGE_NAME, "To" + className))
                     .build()
             targetActivitiesClassList.add(type)
             goToActivitiesMethodList.add(method)
         }
-        //SmartGo里的GoToActivity类里的addFlags()
-        val addFlags = FunSpec.builder("addFlags")
-                .addParameter("flags", INT)
-                .returns(ClassName.get(PACKAGE_NAME, "SmartGo", "ToActivity"))
-                .addStatement("intent!!.addFlags(flags)")
-                .addStatement("return this")
-                .build()
-        //SmartGo里的GoToActivity类里的setAnim()
-        val setAnim = FunSpec.builder("setAnim")
-                .addParameter("enterAnimId", INT)
-                .addParameter("exitAnimId", INT)
-                .returns(ClassName.get(PACKAGE_NAME, "SmartGo", "ToActivity"))
-                .addStatement("enterAnim = enterAnimId")
-                .addStatement("exitAnim = exitAnimId")
-                .addStatement("return this")
-                .build()
-        //SmartGo里的GoToActivity类
-        val smartGoToActivity = TypeSpec.classBuilder("ToActivity")
-                .addFun(setAnim)
-                .addFun(addFlags)
-                .addFunctions(goToActivitiesMethodList)
-                .build()
+
+        createToActivity(goToActivitiesMethodList)
+        createToTargetActivityClass(targetActivitiesClassList)
+
         //SmartGo类里inject(activity)
         val inject = FunSpec.builder("inject")
                 .addParameter("activity", ClassName.bestGuess("android.app.Activity"))
@@ -175,6 +156,7 @@ class SmartGoKtProcessor : AbstractProcessor() {
                 .build()
         //SmartGo类里inject(activity)
         val inject2 = FunSpec.builder("inject")
+                .addAnnotation(AnnotationSpec.builder(Suppress::class).addMemberForValue("names", "UNCHECKED_CAST").build())
                 .addParameter("activity", ClassName.bestGuess("android.app.Activity"))
                 .addParameter("intent", ClassName.bestGuess("android.content.Intent").asNullable())
                 .addCode("try {\n" +
@@ -187,14 +169,14 @@ class SmartGoKtProcessor : AbstractProcessor() {
         //SmartGo类里from()
         val from = FunSpec.builder("from")
                 .addParameter("ctx", ClassName.bestGuess("android.content.Context"))
-                .returns(ClassName.get(PACKAGE_NAME, "SmartGo", "ToActivity"))
+                .returns(ClassName.get(PACKAGE_NAME, "ToActivity"))
                 .addStatement("context = ctx")
                 .addStatement("intent = Intent()")
-                .addStatement("return %T()", ClassName.get(PACKAGE_NAME, "SmartGo", "ToActivity"))
+                .addStatement("return %T()", ClassName.get(PACKAGE_NAME, "ToActivity"))
                 .build()
         //SmartGo类里go()
         val go = FunSpec.builder("gokt")
-                .addModifiers(KModifier.PRIVATE)
+                .addModifiers(KModifier.INTERNAL)
                 .addParameter("clazz", ParameterizedTypeName.get(ClassName.bestGuess(Class::class.java.canonicalName), TypeVariableName.get("*")))
                 .addStatement("intent!!.setClass(context, clazz)")
                 .addStatement("context!!.startActivity(intent)")
@@ -203,7 +185,7 @@ class SmartGoKtProcessor : AbstractProcessor() {
                 .build()
         //SmartGo类里goForResult()
         val goForResult = FunSpec.builder("gokt")
-                .addModifiers(KModifier.PRIVATE)
+                .addModifiers(KModifier.INTERNAL)
                 .addParameter("clazz", ParameterizedTypeName.get(ClassName.bestGuess(Class::class.java.canonicalName), TypeVariableName.get("*")))
                 .addParameter("requestCode", INT)
                 .addStatement("intent!!.setClass(context, clazz)")
@@ -236,19 +218,19 @@ class SmartGoKtProcessor : AbstractProcessor() {
                         "}\n", ClassName.bestGuess("android.app.Activity"), ClassName.bestGuess("kotlin.IllegalArgumentException"))
                 .build()
         //SmartGo类里enterAnim
-        val enterAnim = PropertySpec.builder("enterAnim", INT, KModifier.PRIVATE)
+        val enterAnim = PropertySpec.builder("enterAnim", INT, KModifier.INTERNAL)
                 .mutable(true)
                 .initializer("-1")
                 .build()
         //SmartGo类里exitAnim
-        val exitAnim = PropertySpec.builder("exitAnim", INT, KModifier.PRIVATE)
+        val exitAnim = PropertySpec.builder("exitAnim", INT, KModifier.INTERNAL)
                 .mutable(true)
                 .initializer("-1")
                 .build()
         //SmartGo类
         val propertySpecs = arrayListOf<PropertySpec>()
-        propertySpecs.add(PropertySpec.builder("context", ClassName.bestGuess("android.content.Context").asNullable(), KModifier.PRIVATE).mutable(true).initializer("null").build())
-        propertySpecs.add(PropertySpec.builder("intent", ClassName.bestGuess("android.content.Intent").asNullable(), KModifier.PRIVATE).mutable(true).initializer("null").build())
+        propertySpecs.add(PropertySpec.builder("context", ClassName.bestGuess("android.content.Context").asNullable(), KModifier.INTERNAL).mutable(true).initializer("null").build())
+        propertySpecs.add(PropertySpec.builder("intent", ClassName.bestGuess("android.content.Intent").asNullable(), KModifier.INTERNAL).mutable(true).initializer("null").build())
         propertySpecs.add(enterAnim)
         propertySpecs.add(exitAnim)
         val smartGo = TypeSpec.objectBuilder("SmartGo")
@@ -260,11 +242,43 @@ class SmartGoKtProcessor : AbstractProcessor() {
                 .addFun(goForResult)
                 .addFun(setTransition)
                 .addFun(reset)
-                .addType(smartGoToActivity)
-                .addTypes(targetActivitiesClassList)
                 .build()
-        val kotlinFile = KotlinFile.builder(PACKAGE_NAME, "SmartGo").addType(smartGo).build()
-        kotlinFile.writeTo(filer)
+        KotlinFile.builder(PACKAGE_NAME, "SmartGo").addType(smartGo).build().writeTo(filer)
+    }
+
+    /**
+     * 生成ToActivity.kt
+     */
+    private fun createToActivity(list: List<FunSpec>) {
+        val addFlags = FunSpec.builder("addFlags")
+                .addParameter("flags", INT)
+                .returns(ClassName.get(PACKAGE_NAME, "ToActivity"))
+                .addStatement("SmartGo.intent!!.addFlags(flags)")
+                .addStatement("return this")
+                .build()
+        val setAnim = FunSpec.builder("setAnim")
+                .addParameter("enterAnimId", INT)
+                .addParameter("exitAnimId", INT)
+                .returns(ClassName.get(PACKAGE_NAME, "ToActivity"))
+                .addStatement("SmartGo.enterAnim = enterAnimId")
+                .addStatement("SmartGo.exitAnim = exitAnimId")
+                .addStatement("return this")
+                .build()
+        val smartGoToActivity = TypeSpec.classBuilder("ToActivity")
+                .addFun(setAnim)
+                .addFun(addFlags)
+                .addFunctions(list)
+                .build()
+        KotlinFile.Builder(PACKAGE_NAME, "ToActivity").addType(smartGoToActivity).build().writeTo(filer)
+    }
+
+    /**
+     * 生成ToXXXActivity.kt
+     */
+    private fun createToTargetActivityClass(list: List<TypeSpec>) {
+        list.forEach {
+            KotlinFile.Builder(PACKAGE_NAME, it.name!!).addType(it).build().writeTo(filer)
+        }
     }
 
     @Throws(Exception::class)
@@ -276,7 +290,7 @@ class SmartGoKtProcessor : AbstractProcessor() {
             builder.addModifiers(KModifier.OVERRIDE)
                     .addParameter("a", ClassName.bestGuess(fullClassName))
                     .addParameter("i", ANY.asNullable())
-                    .addStatement("val intent = i as? %T ?: a.getIntent()", ClassName.bestGuess("android.content.Intent"))
+                    .addStatement("val intent = i as? %T ?: a.intent", ClassName.bestGuess("android.content.Intent"))
             for (field in value.fields) {
                 getExtras(builder, field)
             }
@@ -308,12 +322,12 @@ class SmartGoKtProcessor : AbstractProcessor() {
             if (field.fieldType.contains("[]")) {
                 var extraType = field.fieldType.replace("[]", "Array")
                 val paramType = field.fieldParam.substring(field.fieldParam.lastIndexOf(".") + 1, field.fieldParam.length)
-                if (extraType.replace("Array", "") in typeArray) {
+                extraType = if (extraType.replace("Array", "") in typeArray) {
                     //基本类型的数组
-                    extraType = extraType.substring(0, 1).toUpperCase() + extraType.substring(1, extraType.length)
+                    extraType.substring(0, 1).toUpperCase() + extraType.substring(1, extraType.length)
                 } else {
                     val type = field.fieldType.substring(field.fieldType.lastIndexOf(".") + 1, field.fieldType.length)
-                    extraType = type.substring(0, 1).toUpperCase() + type.substring(1, type.length).replace("[]", "Array")
+                    type.substring(0, 1).toUpperCase() + type.substring(1, type.length).replace("[]", "Array")
                 }
                 if (extraType.contentEquals("ParcelableArray")) {
                     //ParcelableArray不能强转为其它类型数组，需要单独处理

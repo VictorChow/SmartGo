@@ -151,8 +151,8 @@ public class SmartGoProcessor extends AbstractProcessor {
                 MethodSpec method = MethodSpec.methodBuilder(methodName)
                         .addModifiers(Modifier.PUBLIC)
                         .addParameter(getFieldType(field), field.fieldValue + "Extra")
-                        .returns(ClassName.get(PACKAGE_NAME, "SmartGo", "To" + className))
-                        .addStatement("intent.put$LExtra($S, $L)", paramName, field.fieldValue, field.fieldValue + "Extra")
+                        .returns(ClassName.get(PACKAGE_NAME, "To" + className))
+                        .addStatement("SmartGo.intent.put$LExtra($S, $L)", paramName, field.fieldValue, field.fieldValue + "Extra")
                         .addStatement("return this")
                         .build();
                 targetActivitiesMethodList.add(method);
@@ -170,8 +170,8 @@ public class SmartGoProcessor extends AbstractProcessor {
             MethodSpec title = MethodSpec.methodBuilder("setTitle")
                     .addModifiers(Modifier.PUBLIC)
                     .addParameter(String.class, "titleExtra")
-                    .returns(ClassName.get(PACKAGE_NAME, "SmartGo", "To" + className))
-                    .addStatement("intent.putExtra($S, $L)", "title", "titleExtra")
+                    .returns(ClassName.get(PACKAGE_NAME, "To" + className))
+                    .addStatement("SmartGo.intent.putExtra($S, $L)", "title", "titleExtra")
                     .addStatement("return this")
                     .build();
             //私有构造方法
@@ -180,8 +180,7 @@ public class SmartGoProcessor extends AbstractProcessor {
                     .build();
             //SmartGo里GoToXXXActivity类
             TypeSpec type = TypeSpec.classBuilder("To" + className)
-                    .addModifiers(Modifier.FINAL, Modifier.STATIC, Modifier.PUBLIC)
-                    .addMethod(constructor)
+                    .addModifiers(Modifier.FINAL, Modifier.PUBLIC)
                     .addMethod(title)
                     .addMethods(targetActivitiesMethodList)
                     .addMethod(go)
@@ -190,43 +189,22 @@ public class SmartGoProcessor extends AbstractProcessor {
             //SmartGo里GoToActivity类里的方法
             MethodSpec method = MethodSpec.methodBuilder("to" + className)
                     .addModifiers(Modifier.PUBLIC)
-                    .addJavadoc("@see $T ←方便跳转\n", ClassName.bestGuess(fullClassName))
-                    .returns(ClassName.get(PACKAGE_NAME, "SmartGo", "To" + className))
-                    .addStatement("return new $T()", ClassName.get(PACKAGE_NAME, "SmartGo", "To" + className))
+                    .addJavadoc("@see $T ←跳转\n", ClassName.bestGuess(fullClassName))
+                    .returns(ClassName.get(PACKAGE_NAME, "To" + className))
+                    .addStatement("return new $T()", ClassName.get(PACKAGE_NAME, "To" + className))
                     .build();
             targetActivitiesClassList.add(type);
             goToActivitiesMethodList.add(method);
         }
+
         //私有构造方法
         MethodSpec constructor = MethodSpec.constructorBuilder()
                 .addModifiers(Modifier.PRIVATE)
                 .build();
-        //SmartGo里的GoToActivity类里的addFlags()
-        MethodSpec addFlags = MethodSpec.methodBuilder("addFlags")
-                .addModifiers(Modifier.PUBLIC)
-                .addParameter(TypeName.INT, "flags")
-                .returns(ClassName.get(PACKAGE_NAME, "SmartGo", "ToActivity"))
-                .addStatement("intent.addFlags(flags)")
-                .addStatement("return this")
-                .build();
-        //SmartGo里的GoToActivity类里的setAnim()
-        MethodSpec setAnim = MethodSpec.methodBuilder("setAnim")
-                .addModifiers(Modifier.PUBLIC)
-                .addParameter(TypeName.INT, "enterAnimId")
-                .addParameter(TypeName.INT, "exitAnimId")
-                .returns(ClassName.get(PACKAGE_NAME, "SmartGo", "ToActivity"))
-                .addStatement("enterAnim = enterAnimId")
-                .addStatement("exitAnim = exitAnimId")
-                .addStatement("return this")
-                .build();
-        //SmartGo里的GoToActivity类
-        TypeSpec smartGoToActivity = TypeSpec.classBuilder("ToActivity")
-                .addModifiers(Modifier.FINAL, Modifier.PUBLIC, Modifier.STATIC)
-                .addMethod(constructor)
-                .addMethod(setAnim)
-                .addMethod(addFlags)
-                .addMethods(goToActivitiesMethodList)
-                .build();
+
+        createToActivityClass(goToActivitiesMethodList);
+        createToTargetActivityClass(targetActivitiesClassList);
+
         //SmartGo类里inject(activity)
         MethodSpec inject = MethodSpec.methodBuilder("inject")
                 .addModifiers(Modifier.PUBLIC, Modifier.STATIC)
@@ -249,14 +227,14 @@ public class SmartGoProcessor extends AbstractProcessor {
         MethodSpec from = MethodSpec.methodBuilder("from")
                 .addModifiers(Modifier.PUBLIC, Modifier.STATIC)
                 .addParameter(ClassName.bestGuess("android.content.Context"), "ctx")
-                .returns(ClassName.get(PACKAGE_NAME, "SmartGo", "ToActivity"))
+                .returns(ClassName.get(PACKAGE_NAME, "ToActivity"))
                 .addStatement("context = ctx")
                 .addStatement("intent = new Intent()")
-                .addStatement("return new $T()", ClassName.get(PACKAGE_NAME, "SmartGo", "ToActivity"))
+                .addStatement("return new $T()", ClassName.get(PACKAGE_NAME, "ToActivity"))
                 .build();
         //SmartGo类里go()
         MethodSpec go = MethodSpec.methodBuilder("go")
-                .addModifiers(Modifier.PRIVATE, Modifier.STATIC)
+                .addModifiers(Modifier.STATIC)
                 .addParameter(Class.class, "clazz")
                 .addStatement("intent.setClass(context, clazz)")
                 .addStatement("context.startActivity(intent)")
@@ -265,7 +243,7 @@ public class SmartGoProcessor extends AbstractProcessor {
                 .build();
         //SmartGo类里goForResult()
         MethodSpec goForResult = MethodSpec.methodBuilder("go")
-                .addModifiers(Modifier.PRIVATE, Modifier.STATIC)
+                .addModifiers(Modifier.STATIC)
                 .addParameter(Class.class, "clazz")
                 .addParameter(int.class, "requestCode")
                 .addStatement("intent.setClass(context, clazz)")
@@ -300,18 +278,18 @@ public class SmartGoProcessor extends AbstractProcessor {
                         "}\n", ClassName.bestGuess("android.app.Activity"), ClassName.bestGuess("java.lang.IllegalArgumentException"))
                 .build();
         //SmartGo类里enterAnim
-        FieldSpec enterAnim = FieldSpec.builder(TypeName.INT, "enterAnim", Modifier.PRIVATE, Modifier.STATIC)
+        FieldSpec enterAnim = FieldSpec.builder(TypeName.INT, "enterAnim", Modifier.STATIC)
                 .initializer("-1")
                 .build();
         //SmartGo类里exitAnim
-        FieldSpec exitAnim = FieldSpec.builder(TypeName.INT, "exitAnim", Modifier.PRIVATE, Modifier.STATIC)
+        FieldSpec exitAnim = FieldSpec.builder(TypeName.INT, "exitAnim", Modifier.STATIC)
                 .initializer("-1")
                 .build();
         //SmartGo类
         TypeSpec smartGo = TypeSpec.classBuilder("SmartGo")
                 .addModifiers(Modifier.PUBLIC, Modifier.FINAL)
                 .addField(ClassName.bestGuess("android.content.Context"), "context", Modifier.PRIVATE, Modifier.STATIC)
-                .addField(ClassName.bestGuess("android.content.Intent"), "intent", Modifier.PRIVATE, Modifier.STATIC)
+                .addField(ClassName.bestGuess("android.content.Intent"), "intent", Modifier.STATIC)
                 .addField(enterAnim)
                 .addField(exitAnim)
                 .addMethod(constructor)
@@ -322,11 +300,50 @@ public class SmartGoProcessor extends AbstractProcessor {
                 .addMethod(goForResult)
                 .addMethod(setTransition)
                 .addMethod(reset)
-                .addType(smartGoToActivity)
-                .addTypes(targetActivitiesClassList)
                 .build();
         JavaFile javaFile = JavaFile.builder(PACKAGE_NAME, smartGo).build();
         javaFile.writeTo(filer);
+    }
+
+    /**
+     * 生成ToActivity.java
+     */
+    private void createToActivityClass(List<MethodSpec> list) throws Exception {
+        //SmartGo里的GoToActivity类里的addFlags()
+        MethodSpec addFlags = MethodSpec.methodBuilder("addFlags")
+                .addModifiers(Modifier.PUBLIC)
+                .addParameter(TypeName.INT, "flags")
+                .returns(ClassName.get(PACKAGE_NAME, "ToActivity"))
+                .addStatement("SmartGo.intent.addFlags(flags)")
+                .addStatement("return this")
+                .build();
+        //SmartGo里的GoToActivity类里的setAnim()
+        MethodSpec setAnim = MethodSpec.methodBuilder("setAnim")
+                .addModifiers(Modifier.PUBLIC)
+                .addParameter(TypeName.INT, "enterAnimId")
+                .addParameter(TypeName.INT, "exitAnimId")
+                .returns(ClassName.get(PACKAGE_NAME, "ToActivity"))
+                .addStatement("SmartGo.enterAnim = enterAnimId")
+                .addStatement("SmartGo.exitAnim = exitAnimId")
+                .addStatement("return this")
+                .build();
+        //SmartGo里的GoToActivity类
+        TypeSpec type = TypeSpec.classBuilder("ToActivity")
+                .addModifiers(Modifier.FINAL, Modifier.PUBLIC)
+                .addMethod(setAnim)
+                .addMethod(addFlags)
+                .addMethods(list)
+                .build();
+        JavaFile.builder(PACKAGE_NAME, type).build().writeTo(filer);
+    }
+
+    /**
+     * 生成ToXXXActivity.java
+     */
+    private void createToTargetActivityClass(List<TypeSpec> list) throws Exception {
+        for (TypeSpec spec : list) {
+            JavaFile.builder(PACKAGE_NAME, spec).build().writeTo(filer);
+        }
     }
 
     private void createInjectors() throws Exception {
