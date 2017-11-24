@@ -6,4 +6,6 @@ package pers.victor.smartgo;
 
 public interface SmartPathInjector {
     boolean goPath(SmartPathEntity entity);
+
+    String getOriginClass(String path);
 }

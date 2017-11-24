@@ -76,10 +76,21 @@ class SmartPathFile {
                             "}\n")
                     .addStatement("return true")
                     .build();
+            MethodSpec getOriginClass = MethodSpec.methodBuilder("getOriginClass")
+                    .addAnnotation(Override.class)
+                    .addModifiers(Modifier.PUBLIC)
+                    .addParameter(String.class, "path")
+                    .returns(String.class)
+                    .addCode("if (path.contentEquals($S)) {\n" +
+                            "  return $S;\n" +
+                            "}\n", pathValue, typeElement.getQualifiedName())
+                    .addStatement("return null")
+                    .build();
             TypeSpec type = TypeSpec.classBuilder(className)
                     .addSuperinterface(SmartPathInjector.class)
                     .addModifiers(Modifier.PUBLIC)
                     .addMethod(goPath)
+                    .addMethod(getOriginClass)
                     .build();
             JavaFile file = JavaFile.builder(packageName, type).build();
             file.writeTo(filer);
