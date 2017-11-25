@@ -1,1 +1,1 @@
-include ':app', ':smartgo-compiler', ':smartgo-core', ':smartgo-path', ':app2'
+include ':app', ':compiler', ':annotation', ':path', ':app2', ':core'
