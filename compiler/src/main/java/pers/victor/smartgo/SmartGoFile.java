@@ -29,6 +29,9 @@ class SmartGoFile {
     private static Map<String, SmartGoEntity> map = new HashMap<>();
 
     static void createSmartGo(Filer filer) throws Exception {
+        if (map.isEmpty()) {
+            return;
+        }
         //SmartGo里GoToXXXActivity类列表
         List<TypeSpec> targetActivitiesClassList = new LinkedList<>();
         //SmartGo里GoToActivity类里的方法列表

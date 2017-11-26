@@ -26,9 +26,9 @@ import javax.tools.Diagnostic;
 @SupportedAnnotationTypes({"pers.victor.smartgo.IntentExtra", "pers.victor.smartgo.Path"})
 public class SmartGoProcessor extends AbstractProcessor {
     static String packageName = "smartgo.module.";
-    static ProcessingEnvironment proEnv;
+    private static ProcessingEnvironment proEnv;
 
-    static void log(String text) {
+    private static void log(String text) {
         proEnv.getMessager().printMessage(Diagnostic.Kind.WARNING, text);
     }
 
@@ -43,8 +43,13 @@ public class SmartGoProcessor extends AbstractProcessor {
     public boolean process(Set<? extends TypeElement> set, RoundEnvironment roundEnvironment) {
         try {
             createSmartGo(roundEnvironment);
+        } catch (Exception e) {
+            log(e.getMessage());
+        }
+        try {
             createSmartPath(roundEnvironment);
-        } catch (Exception ignore) {
+        } catch (Exception e) {
+            log(e.getMessage());
         }
         return false;
     }
