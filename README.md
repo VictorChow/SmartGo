@@ -28,8 +28,8 @@ android {
 }
 
 dependencies {
-    implementation 'com.github.VictorChow.SmartGo:core:2.0.0-rc1'
-    annotationProcessor 'com.github.VictorChow.SmartGo:compiler:2.0.0-rc1'
+    implementation 'com.github.VictorChow.SmartGo:core:2.0.0-rc2'
+    annotationProcessor 'com.github.VictorChow.SmartGo:compiler:2.0.0-rc2'
 }
 ```
 #### Kotlin
@@ -38,8 +38,8 @@ dependencies {
 apply plugin: 'kotlin-kapt'
 
 dependencies {
-    implementation 'com.github.VictorChow.SmartGo:core:2.0.0-rc1'
-    kapt 'com.github.VictorChow.SmartGo:compiler:2.0.0-rc1'
+    implementation 'com.github.VictorChow.SmartGo:core:2.0.0-rc2'
+    kapt 'com.github.VictorChow.SmartGo:compiler:2.0.0-rc2'
 }
 
 kapt {
