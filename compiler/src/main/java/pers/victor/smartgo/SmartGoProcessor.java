@@ -36,20 +36,18 @@ public class SmartGoProcessor extends AbstractProcessor {
     public synchronized void init(ProcessingEnvironment processingEnvironment) {
         super.init(processingEnvironment);
         proEnv = processingEnvironment;
-        packageName += processingEnv.getOptions().get("module");
+        packageName += processingEnv.getOptions().get("module").toLowerCase().replaceAll("[^a-zA-Z0-9]", "");
     }
 
     @Override
     public boolean process(Set<? extends TypeElement> set, RoundEnvironment roundEnvironment) {
         try {
             createSmartGo(roundEnvironment);
-        } catch (Exception e) {
-            log(e.getMessage());
-        }
-        try {
             createSmartPath(roundEnvironment);
         } catch (Exception e) {
-            log(e.getMessage());
+            if (!e.getMessage().contains("Attempt to recreate a file for type")) {
+                log(e.getMessage());
+            }
         }
         return false;
     }
