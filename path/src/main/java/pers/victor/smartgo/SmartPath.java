@@ -2,6 +2,9 @@ package pers.victor.smartgo;
 
 import android.content.Context;
 
+import java.util.HashMap;
+import java.util.Map;
+
 /**
  * Created by Victor on 22/11/2017. (ง •̀_•́)ง
  */
@@ -9,6 +12,7 @@ import android.content.Context;
 public final class SmartPath {
     static final String TAG = "SmartPath";
     static SmartPathEntity entity;
+    static Map<String, SmartPathInjector> pathCache = new HashMap<>();
 
     private SmartPath() {}
 

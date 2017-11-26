@@ -8,7 +8,6 @@ import android.content.Intent;
  */
 
 public final class BuildProps {
-    BuildProps() {}
 
     BuildProps(Context context) {
         SmartPath.entity = new SmartPathEntity();

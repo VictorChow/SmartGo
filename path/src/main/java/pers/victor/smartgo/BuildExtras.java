@@ -11,7 +11,6 @@ import java.util.ArrayList;
  */
 
 public final class BuildExtras {
-    BuildExtras() {}
 
     public BuildExtras putBoolean(String name, boolean value) {
         ((Intent) SmartPath.entity.intent).putExtra(name, value);

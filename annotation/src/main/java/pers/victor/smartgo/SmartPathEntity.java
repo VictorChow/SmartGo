@@ -13,4 +13,18 @@ public class SmartPathEntity {
     public boolean isTransition;
     public int enterAnim;
     public int exitAnim;
+
+    @Override
+    public String toString() {
+        return "SmartPathEntity{" +
+                "context=" + context +
+                ", intent=" + intent +
+                ", path='" + path + '\'' +
+                ", isForResult=" + isForResult +
+                ", requestCode=" + requestCode +
+                ", isTransition=" + isTransition +
+                ", enterAnim=" + enterAnim +
+                ", exitAnim=" + exitAnim +
+                '}';
+    }
 }
