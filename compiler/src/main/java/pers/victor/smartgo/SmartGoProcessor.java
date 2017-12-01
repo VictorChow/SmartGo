@@ -23,7 +23,7 @@ import javax.tools.Diagnostic;
 @AutoService(Processor.class)
 @SupportedOptions("module")
 @SupportedSourceVersion(SourceVersion.RELEASE_8)
-@SupportedAnnotationTypes({"pers.victor.smartgo.IntentExtra", "pers.victor.smartgo.Path"})
+@SupportedAnnotationTypes({"pers.victor.smartgo.IntentExtra", "pers.victor.smartgo.Path", "pers.victor.smartgo.Instance"})
 public class SmartGoProcessor extends AbstractProcessor {
     static String packageName = "smartgo.module.";
     private static ProcessingEnvironment proEnv;
@@ -44,6 +44,7 @@ public class SmartGoProcessor extends AbstractProcessor {
         try {
             createSmartGo(roundEnvironment);
             createSmartPath(roundEnvironment);
+            createInstance(roundEnvironment);
         } catch (Exception e) {
             if (!e.getMessage().contains("Attempt to recreate a file for type")) {
                 log(e.getMessage());
@@ -66,5 +67,13 @@ public class SmartGoProcessor extends AbstractProcessor {
         }
         SmartPathFile.createSmartPath(processingEnv.getFiler(), processingEnv);
         SmartPathFile.createResources(processingEnv.getFiler());
+    }
+
+    private void createInstance(RoundEnvironment roundEnvironment) throws Exception {
+        for (Element element : roundEnvironment.getElementsAnnotatedWith(Instance.class)) {
+            InstanceFile.addElement(element, element.getAnnotation(Instance.class).value());
+        }
+        InstanceFile.createInstance(processingEnv.getFiler(), processingEnv);
+        InstanceFile.createResources(processingEnv.getFiler());
     }
 }

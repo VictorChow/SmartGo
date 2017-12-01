@@ -1,34 +1,19 @@
 package pers.victor.smartgo;
 
-import com.google.common.io.Closer;
-import com.squareup.javapoet.AnnotationSpec;
 import com.squareup.javapoet.ClassName;
 import com.squareup.javapoet.JavaFile;
 import com.squareup.javapoet.MethodSpec;
 import com.squareup.javapoet.ParameterSpec;
 import com.squareup.javapoet.TypeSpec;
-import com.squareup.javapoet.TypeVariableName;
 
-import java.io.BufferedReader;
-import java.io.BufferedWriter;
-import java.io.IOException;
-import java.io.InputStream;
-import java.io.InputStreamReader;
-import java.io.OutputStream;
-import java.io.OutputStreamWriter;
-import java.nio.charset.Charset;
 import java.util.HashMap;
-import java.util.HashSet;
 import java.util.Map;
-import java.util.Set;
 
 import javax.annotation.processing.Filer;
 import javax.annotation.processing.ProcessingEnvironment;
 import javax.lang.model.element.Element;
 import javax.lang.model.element.Modifier;
 import javax.lang.model.element.TypeElement;
-import javax.tools.FileObject;
-import javax.tools.StandardLocation;
 
 /**
  * Created by Victor on 22/11/2017. (ง •̀_•́)ง
@@ -36,7 +21,8 @@ import javax.tools.StandardLocation;
 
 class SmartPathFile {
     private static final String RES_PATH = "META-INF/services/pers.victor.smartgo.SmartPathInjector";
-    private static Map<Element, String> elements = new HashMap<>();
+    private static final String suffix = "_SmartPath";
+    private static final Map<Element, String> elements = new HashMap<>();
 
     static void addElement(Element element, String path) {
         elements.put(element, path);
@@ -47,9 +33,9 @@ class SmartPathFile {
             TypeElement typeElement = (TypeElement) entry.getKey();
             String packageName = env.getElementUtils().getPackageOf(typeElement).getQualifiedName().toString();
             String pathValue = entry.getValue();
-            String className = typeElement.getSimpleName() + "_SmartPath";
+            String className = typeElement.getSimpleName() + suffix;
             String targetFullClass = typeElement.getQualifiedName().toString();
-            MethodSpec goPath = MethodSpec.methodBuilder("goActivity")
+            MethodSpec goActivity = MethodSpec.methodBuilder("goActivity")
                     .addAnnotation(Override.class)
                     .addModifiers(Modifier.PUBLIC)
                     .addParameter(ParameterSpec.builder(SmartPathEntity.class, "entity").build())
@@ -73,14 +59,6 @@ class SmartPathFile {
                             "  ((Activity) context).overridePendingTransition(entity.enterAnim, entity.exitAnim);\n" +
                             "}\n")
                     .build();
-            MethodSpec newInstance = MethodSpec.methodBuilder("newInstance")
-                    .addAnnotation(Override.class)
-                    .addAnnotation(AnnotationSpec.builder(SuppressWarnings.class).addMember("value", "$S", "unchecked").build())
-                    .addModifiers(Modifier.PUBLIC)
-                    .addTypeVariable(TypeVariableName.get("T"))
-                    .returns(TypeVariableName.get("T"))
-                    .addStatement("return (T) new $T()", ClassName.bestGuess(typeElement.getQualifiedName().toString()))
-                    .build();
             MethodSpec getPath = MethodSpec.methodBuilder("getPath")
                     .addAnnotation(Override.class)
                     .addModifiers(Modifier.PUBLIC)
@@ -90,65 +68,14 @@ class SmartPathFile {
             TypeSpec type = TypeSpec.classBuilder(className)
                     .addSuperinterface(SmartPathInjector.class)
                     .addModifiers(Modifier.PUBLIC)
-                    .addMethod(goPath)
-                    .addMethod(newInstance)
+                    .addMethod(goActivity)
                     .addMethod(getPath)
                     .build();
-            JavaFile file = JavaFile.builder(packageName, type).build();
-            file.writeTo(filer);
+            JavaFile.builder(packageName, type).build().writeTo(filer);
         }
     }
 
     static void createResources(Filer filer) throws Exception {
-        Set<String> services = new HashSet<>();
-        for (Map.Entry<Element, String> entry : elements.entrySet()) {
-            TypeElement typeElement = (TypeElement) entry.getKey();
-            String className = typeElement.getQualifiedName() + "_SmartPath";
-            services.add(className);
-        }
-        try {
-            FileObject existingFile = filer.getResource(StandardLocation.CLASS_OUTPUT, "", RES_PATH);
-            InputStream inputStream = existingFile.openInputStream();
-            services.addAll(readServiceFile(inputStream));
-            inputStream.close();
-        } catch (Exception ignored) {
-        }
-        FileObject fileObject = filer.createResource(StandardLocation.CLASS_OUTPUT, "", RES_PATH);
-        OutputStream outputStream = fileObject.openOutputStream();
-        writeServiceFile(services, outputStream);
-        outputStream.close();
-    }
-
-    private static Set<String> readServiceFile(InputStream input) throws IOException {
-        HashSet<String> serviceClasses = new HashSet<>();
-        Closer closer = Closer.create();
-        try {
-            BufferedReader r = closer.register(new BufferedReader(new InputStreamReader(input, Charset.forName("UTF-8"))));
-            String line;
-            while ((line = r.readLine()) != null) {
-                int commentStart = line.indexOf('#');
-                if (commentStart >= 0) {
-                    line = line.substring(0, commentStart);
-                }
-                line = line.trim();
-                if (!line.isEmpty()) {
-                    serviceClasses.add(line);
-                }
-            }
-            return serviceClasses;
-        } catch (Throwable t) {
-            throw closer.rethrow(t);
-        } finally {
-            closer.close();
-        }
-    }
-
-    private static void writeServiceFile(Set<String> services, OutputStream output) throws IOException {
-        BufferedWriter writer = new BufferedWriter(new OutputStreamWriter(output, Charset.forName("UTF-8")));
-        for (String service : services) {
-            writer.write(service);
-            writer.newLine();
-        }
-        writer.flush();
+        ResourceUtil.createResources(filer, elements, RES_PATH, suffix);
     }
 }

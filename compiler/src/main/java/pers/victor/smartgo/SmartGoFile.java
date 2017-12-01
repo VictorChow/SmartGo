@@ -212,8 +212,7 @@ class SmartGoFile {
                 .addMethod(setTransition)
                 .addMethod(reset)
                 .build();
-        JavaFile javaFile = JavaFile.builder(SmartGoProcessor.packageName, smartGo).build();
-        javaFile.writeTo(filer);
+        JavaFile.builder(SmartGoProcessor.packageName, smartGo).build().writeTo(filer);
     }
 
     /**
@@ -359,8 +358,7 @@ class SmartGoFile {
                     .addSuperinterface(ParameterizedTypeName.get(ClassName.bestGuess(SmartGoInjector.class.getCanonicalName()), ClassName.bestGuess(fullClassName)))
                     .addMethod(builder.build())
                     .build();
-            JavaFile javaFile = JavaFile.builder(packageName, typeSpec).build();
-            javaFile.writeTo(filer);
+            JavaFile.builder(packageName, typeSpec).build().writeTo(filer);
         }
     }
 

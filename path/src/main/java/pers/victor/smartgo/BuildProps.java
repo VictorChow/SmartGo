@@ -27,7 +27,7 @@ public final class BuildProps {
         return this;
     }
 
-    public BuildExtras path(String path) {
+    public BuildExtras toPath(String path) {
         SmartPath.entity.path = path;
         return new BuildExtras();
     }

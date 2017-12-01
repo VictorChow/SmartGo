@@ -28,8 +28,8 @@ android {
 }
 
 dependencies {
-    implementation 'com.github.VictorChow.SmartGo:core:2.0.0-rc2'
-    annotationProcessor 'com.github.VictorChow.SmartGo:compiler:2.0.0-rc2'
+    implementation 'com.github.VictorChow.SmartGo:core:2.0.0-rc3'
+    annotationProcessor 'com.github.VictorChow.SmartGo:compiler:2.0.0-rc3'
 }
 ```
 #### Kotlin
@@ -38,8 +38,8 @@ dependencies {
 apply plugin: 'kotlin-kapt'
 
 dependencies {
-    implementation 'com.github.VictorChow.SmartGo:core:2.0.0-rc2'
-    kapt 'com.github.VictorChow.SmartGo:compiler:2.0.0-rc2'
+    implementation 'com.github.VictorChow.SmartGo:core:2.0.0-rc3'
+    kapt 'com.github.VictorChow.SmartGo:compiler:2.0.0-rc3'
 }
 
 kapt {
@@ -120,7 +120,7 @@ public class Module1Activity extends Activity {
 SmartPath.from(context)
          .addFlags(Intent.FLAG_ACTIVITY_NEW_TASK)    //需要时使用，非必需
          .setAnim(R.anim.enterAnim, R.anim.exitAnim) //需要时使用，非必需
-         .path("module1_activity")
+         .toPath("module1_activity")
          .putString("name", "victor")
          .putInt("age", 23)
          .go(); //可填入requestCode
@@ -131,13 +131,22 @@ SmartPath.from(context)
 ### module1
 
 ```java
-@Path("test_fragment")
+@Instance("test_fragment")
 public class TestFragment extends Fragment {
+}
+
+@Instance("test_invoke")
+public class TestInvokable implements Invokable {
+    @Override
+    public Object invoke(Object... key) {
+        return "TestInvokable";
+    }
 }
 ```
 
 ### module2
 
 ```java
- Fragment fragment = (Fragment) SmartPath.createInstance("test_fragment");
+ Fragment fragment = SmartPath.createInstance("test_fragment");
+ Invokable invokable = SmartPath.createInstance("test_invoke");
 ```
