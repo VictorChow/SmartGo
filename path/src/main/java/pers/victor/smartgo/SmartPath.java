@@ -12,7 +12,7 @@ import java.util.Map;
 public final class SmartPath {
     static final String TAG = "SmartPath";
     static SmartPathEntity entity;
-    static Map<String, SmartPathInjector> pathCache = new HashMap<>();
+    static Map<String, SmartPathInjector> cache = new HashMap<>();
 
     private SmartPath() {}
 
@@ -20,7 +20,7 @@ public final class SmartPath {
         return new BuildProps(context);
     }
 
-    public static Object createInstance(String path) {
+    public static <T> T createInstance(String path) {
         return LoadPath.newInstanceOrNull(path);
     }
 

@@ -126,7 +126,7 @@ class SmartGoFile {
                 .addModifiers(Modifier.PUBLIC, Modifier.STATIC)
                 .addParameter(Object.class, "activity")
                 .addParameter(Object.class, "intent")
-                .addAnnotation(AnnotationSpec.builder(SuppressWarnings.class).addMember("value", "\"unchecked\"").build())
+                .addAnnotation(AnnotationSpec.builder(SuppressWarnings.class).addMember("value", "$S", "unchecked").build())
                 .addCode("try {\n" +
                         "  String injectorName = activity.getClass().getCanonicalName() + \"_SmartGo\";\n" +
                         "  (($T) Class.forName(injectorName).newInstance()).inject(activity, intent);\n" +

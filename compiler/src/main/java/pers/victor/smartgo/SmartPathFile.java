@@ -1,11 +1,13 @@
 package pers.victor.smartgo;
 
 import com.google.common.io.Closer;
+import com.squareup.javapoet.AnnotationSpec;
 import com.squareup.javapoet.ClassName;
 import com.squareup.javapoet.JavaFile;
 import com.squareup.javapoet.MethodSpec;
 import com.squareup.javapoet.ParameterSpec;
 import com.squareup.javapoet.TypeSpec;
+import com.squareup.javapoet.TypeVariableName;
 
 import java.io.BufferedReader;
 import java.io.BufferedWriter;
@@ -47,14 +49,10 @@ class SmartPathFile {
             String pathValue = entry.getValue();
             String className = typeElement.getSimpleName() + "_SmartPath";
             String targetFullClass = typeElement.getQualifiedName().toString();
-            MethodSpec goPath = MethodSpec.methodBuilder("goPath")
+            MethodSpec goPath = MethodSpec.methodBuilder("goActivity")
                     .addAnnotation(Override.class)
                     .addModifiers(Modifier.PUBLIC)
                     .addParameter(ParameterSpec.builder(SmartPathEntity.class, "entity").build())
-                    .returns(boolean.class)
-                    .addCode("if (!entity.path.contentEquals($S)) {\n" +
-                            "  return false;\n" +
-                            "}\n", pathValue)
                     .addStatement("$T context = (Context) entity.context", ClassName.bestGuess("android.content.Context"))
                     .addStatement("$T intent = (Intent) entity.intent", ClassName.bestGuess("android.content.Intent"))
                     .addStatement("intent.setClass(context, $T.class)", ClassName.bestGuess(targetFullClass))
@@ -74,34 +72,27 @@ class SmartPathFile {
                             "  }\n" +
                             "  ((Activity) context).overridePendingTransition(entity.enterAnim, entity.exitAnim);\n" +
                             "}\n")
-                    .addStatement("return true")
-                    .build();
-            MethodSpec getOriginClass = MethodSpec.methodBuilder("getOriginClass")
-                    .addAnnotation(Override.class)
-                    .addModifiers(Modifier.PUBLIC)
-                    .addParameter(String.class, "path")
-                    .returns(String.class)
-                    .addCode("if (path.contentEquals($S)) {\n" +
-                            "  return $S;\n" +
-                            "}\n", pathValue, typeElement.getQualifiedName())
-                    .addStatement("return null")
                     .build();
             MethodSpec newInstance = MethodSpec.methodBuilder("newInstance")
                     .addAnnotation(Override.class)
+                    .addAnnotation(AnnotationSpec.builder(SuppressWarnings.class).addMember("value", "$S", "unchecked").build())
                     .addModifiers(Modifier.PUBLIC)
-                    .addParameter(String.class, "path")
-                    .returns(Object.class)
-                    .addCode("if (path.contentEquals($S)) {\n" +
-                            "  return new $T();\n" +
-                            "}\n", pathValue, ClassName.bestGuess(typeElement.getQualifiedName().toString()))
-                    .addStatement("return null")
+                    .addTypeVariable(TypeVariableName.get("T"))
+                    .returns(TypeVariableName.get("T"))
+                    .addStatement("return (T) new $T()", ClassName.bestGuess(typeElement.getQualifiedName().toString()))
+                    .build();
+            MethodSpec getPath = MethodSpec.methodBuilder("getPath")
+                    .addAnnotation(Override.class)
+                    .addModifiers(Modifier.PUBLIC)
+                    .returns(String.class)
+                    .addStatement("return $S", pathValue)
                     .build();
             TypeSpec type = TypeSpec.classBuilder(className)
                     .addSuperinterface(SmartPathInjector.class)
                     .addModifiers(Modifier.PUBLIC)
                     .addMethod(goPath)
-                    .addMethod(getOriginClass)
                     .addMethod(newInstance)
+                    .addMethod(getPath)
                     .build();
             JavaFile file = JavaFile.builder(packageName, type).build();
             file.writeTo(filer);
@@ -121,7 +112,6 @@ class SmartPathFile {
             services.addAll(readServiceFile(inputStream));
             inputStream.close();
         } catch (Exception ignored) {
-
         }
         FileObject fileObject = filer.createResource(StandardLocation.CLASS_OUTPUT, "", RES_PATH);
         OutputStream outputStream = fileObject.openOutputStream();
@@ -153,7 +143,7 @@ class SmartPathFile {
         }
     }
 
-    static void writeServiceFile(Set<String> services, OutputStream output) throws IOException {
+    private static void writeServiceFile(Set<String> services, OutputStream output) throws IOException {
         BufferedWriter writer = new BufferedWriter(new OutputStreamWriter(output, Charset.forName("UTF-8")));
         for (String service : services) {
             writer.write(service);
