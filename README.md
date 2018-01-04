@@ -53,6 +53,8 @@ kapt {
 
 ```
 -keep class * implements pers.victor.smartgo.SmartGoInjector
+-keep class * implements pers.victor.smartgo.SmartPathInjector
+-keep class * implements pers.victor.smartgo.InstanceInjector
 ```
 
 ## 同模块
